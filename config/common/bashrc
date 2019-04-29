@@ -413,17 +413,18 @@ dockertf() {
   docker_run_with_nvidia "$tag"
 }
 dockerrunsimplewithbash() {
-  local tag=${1:-'laigd/myenv'}
-  if [[ "$tag" == 'laigd/myenv' ]]; then
+  local mydockerrepo=lam8da/aaroey-env
+  local tag=${1:-$mydockerrepo}
+  if [[ "$tag" == $mydockerrepo ]]; then
     local cuda_major=${cuda_major:-9}
     local cuda_minor=${cuda_minor:-0}
     local cudnn_major=${cudnn_major:-7}
     local cudnn_version_suffix=${cudnn_version_suffix:-5.0.56}
     local tensorrt_version=${tensorrt_version:-5.1.2}
     local tag_suffix=cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
-    tag=laigd/myenv:$tag_suffix
+    tag=$mydockerrepo:$tag_suffix
 
-    local found="$(docker images --filter "reference=$tag" | grep "$tag_suffix")"
+    local found="$(docker pull $tag)"
     if ! [[ "$found" ]]; then
       local tmpdir=$(mktemp -d)
       mkdir -p $tmpdir
@@ -434,7 +435,8 @@ dockerrunsimplewithbash() {
         --build-arg CUDNN_MAJOR_VERSION=${cudnn_major} \
         --build-arg CUDNN_VERSION_SUFFIX=${cudnn_version_suffix} \
         --build-arg TENSORRT_VERSION=${tensorrt_version} \
-        -f $AAROEY_LIB_DIR/dockerfiles/devel-gpu.Dockerfile ./
+        -f $AAROEY_LIB_DIR/dockerfiles/devel-gpu.Dockerfile ./ \
+        && docker push $tag
       popd
     fi
   fi
