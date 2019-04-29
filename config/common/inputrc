@@ -1,0 +1,9 @@
+# These commands need to be in ~/.inputrc:
+# - `source` won't work
+# - putting them in ~/.bashrc won't work
+set show-all-if-ambiguous on
+set completion-ignore-case on
+# To unset, need to 'set editing-mode emacs'
+# Also check if 'set -o vi' was run before, if so, to unset, we also need to
+# do 'set +o vi'
+set editing-mode vi

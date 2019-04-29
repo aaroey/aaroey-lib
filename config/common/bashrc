@@ -25,11 +25,18 @@ AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
 AAROEY_LIB_CONFIG_COMMON_DIR=$AAROEY_LIB_DIR/config/common
 DOCKER_ROOT=$HOME/Workspace/dockerroot
 
+init_inputrc() {
+  if ! [[ -f $HOME/.inputrc.oss_backup ]]; then
+    if [[ -f $HOME/.inputrc ]]; then
+      mv $HOME/.inputrc $HOME/.inputrc.oss_backup
+    fi
+    cp $AAROEY_LIB_CONFIG_COMMON_DIR/inputrc $HOME/.inputrc
+  fi
+}
 make_docker_root() {
-  if [[ -d $DOCKER_ROOT ]]; then return; fi
-
-  # Copy things in the repo to a local directory and make it root of docker.
-  mkdir -p $DOCKER_ROOT
+  if ! [[ -d $DOCKER_ROOT ]]; then
+    cp -r $AAROEY_LIB_DIR/docker/root $DOCKER_ROOT
+  fi
 }
 export_ps1() {
   # \a : an ASCII bell character (07)
@@ -90,6 +97,7 @@ init_vim() {
   fi
 }
 init() {
+  init_inputrc
   make_docker_root
   export_ps1
   init_vim
@@ -340,7 +348,7 @@ new_tmux_session() {
     tmpconfig=/tmp/tmux.conf.$1
   fi
 
-  cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl        \
+  cat $AAROEY_LIB_CONFIG_COMMON_DIR/.tmux_config_tmpl        \
     | sed "s/<mysession>/$session/g"                        \
     | sed "s/<window0>/$1/g"    | sed "s#<path0>#$2#g"      \
     | sed "s/<window1>/$3/g"    | sed "s#<path1>#$4#g"      \
@@ -381,6 +389,16 @@ dockerprune_containers_and_images() {
   docker container prune -f
   docker image prune -f
 }
+docker_run_with_nvidia() {
+  # We can also do the following instead of -v:
+  # --mount type=bind,source=<src>,target=<dst>
+  local tag="$1"
+  shift
+  docker run $@ --runtime=nvidia \
+    -v /tmp:/tmp \
+    -v $DOCKER_ROOT:/root \
+    -it "$tag" bash
+}
 dockertf() {
   # Don't do --rm.
   # Remember to run `docker commit <hash> <tag>` after changing something in the
@@ -392,10 +410,7 @@ dockertf() {
     tag=$mytag
   fi
   # nvidia-docker is also fine.
-  docker run --runtime=nvidia \
-    --mount type=bind,source=/tmp/lambdatfpy,target=/tmp/lambdatfpy \
-    --mount type=bind,source=$DOCKER_ROOT,target=/root \
-    -it $tag bash
+  docker_run_with_nvidia "$tag"
 }
 dockerrunsimplewithbash() {
   local tag=${1:-'laigd/myenv'}
@@ -405,24 +420,26 @@ dockerrunsimplewithbash() {
     local cudnn_major=${cudnn_major:-7}
     local cudnn_version_suffix=${cudnn_version_suffix:-5.0.56}
     local tensorrt_version=${tensorrt_version:-5.1.2}
-    tag=laigd/myenv:cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
-    local tmpdir=$(mktemp -d)
-    mkdir -p $tmpdir
-    pushd $tmpdir
-    docker build --pull -t $tag \
-      --build-arg CUDA_MAJOR_VERSION=${cuda_major} \
-      --build-arg CUDA_MINOR_VERSION=${cuda_minor} \
-      --build-arg CUDNN_MAJOR_VERSION=${cudnn_major} \
-      --build-arg CUDNN_VERSION_SUFFIX=${cudnn_version_suffix} \
-      --build-arg TENSORRT_VERSION=${tensorrt_version} \
-      -f $AAROEY_LIB_DIR/dockerfiles/devel-gpu.Dockerfile ./
-    popd
+    local tag_suffix=cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
+    tag=laigd/myenv:$tag_suffix
+
+    local found="$(docker images --filter "reference=$tag" | grep "$tag_suffix")"
+    if ! [[ "$found" ]]; then
+      local tmpdir=$(mktemp -d)
+      mkdir -p $tmpdir
+      pushd $tmpdir
+      docker build --pull -t $tag \
+        --build-arg CUDA_MAJOR_VERSION=${cuda_major} \
+        --build-arg CUDA_MINOR_VERSION=${cuda_minor} \
+        --build-arg CUDNN_MAJOR_VERSION=${cudnn_major} \
+        --build-arg CUDNN_VERSION_SUFFIX=${cudnn_version_suffix} \
+        --build-arg TENSORRT_VERSION=${tensorrt_version} \
+        -f $AAROEY_LIB_DIR/dockerfiles/devel-gpu.Dockerfile ./
+      popd
+    fi
   fi
   # Adding --net=host will change PS1 to **NOT** show the hash.
-  docker run --rm --runtime=nvidia \
-    -v /tmp:/tmp \
-    -v $DOCKER_ROOT:/root \
-    -it "$tag" bash
+  docker_run_with_nvidia "$tag" --rm
 }
 
 ################################## virtualenv ##################################
