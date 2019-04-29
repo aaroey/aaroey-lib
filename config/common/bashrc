@@ -1,0 +1,535 @@
+################################# Init scripts #################################
+
+# The local root of the cloned repository.
+AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
+AAROEY_LIB_CONFIG_COMMON_DIR=$AAROEY_LIB_DIR/config/common
+DOCKER_ROOT=$HOME/Workspace/dockerroot
+
+makedockerroot() {
+  if [[ -d $DOCKER_ROOT ]]; then return; fi
+
+  # Copy things in the repo to a local directory and make it root of docker.
+  mkdir -p $DOCKER_ROOT
+}
+export_ps1() {
+  # \a : an ASCII bell character (07)
+  # \d : the date in "Weekday Month Date" format (e.g., "Tue May 26")
+  # \D{format} :  the format is passed to strftime(3) and the result is inserted into the prompt string; an empty format results in a locale-specific time representation. The braces are required
+  # \e : an ASCII escape character (033)
+  # \h : the hostname up to the first '.'
+  # \H : the hostname
+  # \j : the number of jobs currently managed by the shell
+  # \l : the basename of the shell’s terminal device name
+  # \n : newline
+  # \r : carriage return
+  # \s : the name of the shell, the basename of $0 (the portion following the final slash)
+  # \t : the current time in 24-hour HH:MM:SS format
+  # \T : the current time in 12-hour HH:MM:SS format
+  # \@ : the current time in 12-hour am/pm format
+  # \A : the current time in 24-hour HH:MM format
+  # \u : the username of the current user
+  # \v : the version of bash (e.g., 2.00)
+  # \V : the release of bash, version + patch level (e.g., 2.00.0)
+  # \w : the current working directory, with $HOME abbreviated with a tilde
+  # \W : the basename of the current working directory, with $HOME abbreviated with a tilde
+  # \! : the history number of this command
+  # \# : the command number of this command
+    # \$ : if the effective UID is 0, a #, otherwise a $
+  # \nnn : the character corresponding to the octal number nnn
+  # \\ : a backslash
+  # \[ : begin a sequence of non-printing characters, which could be used to embed a terminal control sequence into the prompt
+  # \] : end a sequence of non-printing characters
+
+  # \e[ : Start color scheme.
+  # x;y : Color pair to use (x;y)
+  # $PS1 : Your shell prompt variable.
+  # \e[m : Stop color scheme.
+
+  # A list of color codes (Note: You need to replace digit 0 with 1 to get light
+  # color version).
+  # Black  0;30  |  Blue   0;34  |  Green  0;32  |  Cyan   0;36  |  Red    0;31
+  # Purple 0;35  |  Brown  0;33  |  Blue   0;34  |  Green  0;32  |  Cyan   0;36
+  # Red    0;31  |  Purple 0;35  |  Brown  0;33
+
+  # my_ps1="\[\e[32;1m\]\u@\[\e[36m\]\h\[\e[33m\]:\[\e[35;4m\]\W\[\e[0m\e[31;1m\]\$\[\e[0m\] "
+  # my_ps1="\[\e[32;1m\]\u\[\e[33m\]@\[\e[36m\]\H\[\e[33m\]>\[\e[35;4m\]\w\[\e[0m\e[31;1m\]\n\$\[\e[0m\] "
+  local my_ps1="\[\e[32;1m\]\u\[\e[33m\]@\[\e[36m\]\H\[\e[33m\]>\$(date '+%Y-%m-%d|%H:%M:%S')>\[\e[35;4m\]\w\[\e[0m\e[31;1m\]\n\$\[\e[0m\] "
+  if [[ "$VIRTUAL_ENV" == '' ]]; then
+    export PS1=$my_ps1
+  else
+    export PS1="(${VIRTUAL_ENV/*\//}) $my_ps1"
+  fi
+}
+init() {
+  makedockerroot
+  export_ps1
+}
+init
+
+##################################### bash #####################################
+NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
+
+clearscreen() {
+  clear && echo -en "\e[3J"
+}
+# We can add option -l to grep to show only filename instead of matched content
+fgpdir() {
+  # $1 is command (whether to use xargs or not)
+  # $2 directory
+  # $3 is pattern
+  local option_h=''
+  if [[ "$1" == xargs ]]; then option_h='-H'; fi
+  find -L "$2" -type f | $1 grep $option_h -m $NUM_MATCHES_TO_FIND --color "$3" 2>/dev/null
+}
+grepfile() {
+  local pattern="$1"
+  shift
+  grep -H -m $NUM_MATCHES_TO_FIND --color "$pattern" "$@"
+}
+fgptmpl() {
+  case "$#" in
+    0) echo 'Usage: fgptmpl [file_or_dir_1 [file_or_dir_2...]] pattern';;
+    1) fgpdir xargs . "$1";;
+    2) fgpdir xargs "$1" "$2";;
+    *)
+      until [[ $# -eq 1 ]]; do
+        if test -d "$1"; then
+          fgpdir xargs "$1" "${!#}"
+        else
+          grepfile "${!#}" "$1"
+        fi
+        shift
+      done
+      ;;
+  esac
+}
+lgptmpl() {
+  case "$#" in
+    1) fgpdir '' . "$1";;
+    2) fgpdir '' "$1" "$2";;
+    *) echo 'Only one or two arguments are accepted!';;
+  esac
+}
+lgpltemp() {
+  # lgp + ls
+  lgptmpl "$@" | xargs ls -alhF | grep "$@" --color
+}
+fgp()    { NUM_MATCHES_TO_FIND=10000; fgptmpl "$@"; }
+fgp1()   { NUM_MATCHES_TO_FIND=1;     fgptmpl "$@"; }
+lgp()    { NUM_MATCHES_TO_FIND=10000; lgptmpl "$@"; }
+lgpl()   { NUM_MATCHES_TO_FIND=10000; lgpltemp "$@"; }
+lgp1()   { NUM_MATCHES_TO_FIND=1;     lgpltemp "$@"; }
+lfgp()   {
+  NUM_MATCHES_TO_FIND=10000
+  case "$#" in
+    0) ;&
+    1)
+      echo 'Usage: lfgp file_name_pattern_1 [file_name_pattern_2 ...] file_content_pattern'
+      echo 'Note that to match special characters like "-" or "*" we need the antislash.'
+      return;;
+  esac
+  local out="$(find -L . -type f)"
+  while (( $# > 1 )); do
+    out=$(echo "$out" | grep "$1")
+    shift
+  done
+  echo "$out" | xargs grep -H -m $NUM_MATCHES_TO_FIND --color "$1" 2>/dev/null
+}
+psgp()   { ps -AlF | grep --color "^F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD\|$@"; }
+du0()    { du -d 0 -h $@;                           }
+dutop()  { du -a -h "$@" | sort -r -h | head -n 30; }
+ll()     { ls -alhF --color "$@";                   }
+llpwd()  { for i in "$@"; do ll -d -1 "$PWD/$i"; done }
+
+# date
+# Timezones: ll /usr/share/zoneinfo/
+datesecond()      { date +%s;                                 }
+datems()          { echo $(($(date +%s%N)/1000000));          }  # milliseconds
+dateus()          { echo $(($(date +%s%N)/1000));             }  # microsecods
+datens()          { date +%s%N;                               }  # nanoseconds
+
+datetotmpl()      { date -d"$1" '+%s%N';                      }
+datetoseconds()   { echo $(($(datetotmpl "$1")/1000000000));  }  # e.g.: datetoseconds '2013-01-01 12:12:12'
+datetoms()        { echo $(($(datetotmpl "$1")/1000000));     }  # e.g.: datetoms '2013-01-01 12:12:12'
+datetous()        { echo $(($(datetotmpl "$1")/1000));        }  # e.g.: datetous '2013-01-01 12:12:12'
+datetons()        { datetotmpl "$1";                          }  # e.g.: datetons '2013-01-01 12:12:12'
+
+# How to use xargs with date: xargs -I^ date -d@"^" '+%Y-%m-%d %H:%M:%S.%N'
+datelocal() {
+  if [[ "$1" == '--pretty' ]] || [[ "$1" == '-p' ]]; then
+    date '+%Y-%m-%d-%H:%M:%S.%N'
+  else
+    date '+%Y-%m-%d-%H-%M-%S'
+  fi
+}
+datefromtmpl() {
+  echo 'local time:' $(date -d@$1 '+%Y-%m-%d-%H:%M:%S.%N')
+  echo 'UTC:' $(TZ=UTC date -d@$1 '+%Y-%m-%d-%H:%M:%S.%N')
+}
+datefromseconds() { datefromtmpl $1;                          }  # e.g.: datefromseconds 1449687592.462323056
+datefromms()      { datefromtmpl $(echo $1/1000 | bc);        }  # e.g.: datefromms 1449687592462.323056
+datefromus()      { datefromtmpl $(echo $1/1000000 | bc);     }  # e.g.: datefromus 1449687592462323.056
+datefromns()      { datefromtmpl $(echo $1/1000000000 | bc);  }  # e.g.: datefromns 1449687592462323056
+# Some weird seconds: datefromseconds 9971999 diffs with datefromseconds 9972000 with 1 hour!!!
+
+# number base transform
+base8to10()  { local num; ((num=0${1})); echo $num;       }
+base16to10() { local num; ((num=0x${1})); echo $num;      }
+baseto10()   { local num; ((num=${1}'#'${2})); echo $num; }
+basefrom10() { echo "obase=$1;$2" | bc;                   }
+
+lddclean() {
+  LD_LIBRARY_PATH= ldd "$@"
+}
+
+hist() {
+  local last_n=10
+  if [[ $1 =~ ^[0-9]+$ ]]; then
+    last_n=$1
+    shift
+  fi
+  # Read the history file
+  history -r
+  if [[ $# -lt 1 ]]; then
+    history $last_n
+  else
+    # HISTSIZE is set to large enough to print all history
+    history | grep --color "$@" | tail -n $last_n
+  fi
+}
+ht() {
+  local last_n=20
+  # http://stackoverflow.com/questions/806906/how-do-i-test-if-a-variable-is-a-number-in-bash
+  # if [ "$1" -eq "$1" ] 2>/dev/null; then
+  if [[ $1 =~ ^[0-9]+$ ]]; then
+    last_n=$1
+    shift
+  fi
+  if [[ $# -lt 1 ]]; then
+    tail -n $[last_n*20] $HISTFILE | grep -v '^#'
+  else
+    grep "$@" $HISTFILE | tail -n $[last_n*20]
+  fi | sed 's/ *$//g'  \
+     | nl -n rz        \
+     | sort -k2 -k1,1r \
+     | uniq -s 8       \
+     | sort            \
+     | tail -n $last_n \
+     | sed 's/^[0-9]\+\t*//'
+}
+# export PROMPT_COMMAND='history -a; history -r'
+export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+uniqbashhistory() {
+  local tmpfile=/tmp/bash-history-$RANDOM
+  local backupfile=$tmpfile.bak
+  echo "Backing up $HISTFILE to $backupfile..."
+  cp "$HISTFILE" "$backupfile"
+  echo "Trimming $HISTFILE..."
+  cat "$HISTFILE" \
+    | nl | sort -k2 -k 1,1nr | uniq -f1 | sort -n | cut -f2 | uniq -w3 \
+    > $tmpfile
+  mv $tmpfile "$HISTFILE"
+  echo "Done."
+}
+
+# Config file for bc
+export BC_ENV_ARGS=~/.bcrc
+
+# Vim mode in Bash, see http://blog.sanctum.geek.nz/vi-mode-in-bash/
+set -o vi
+
+export -f fgp fgp1 lgp lgp1 psgp du0 ll datelocal datesecond datems dateus datens datetotmpl datetoseconds datetoms datetous datetons datefromtmpl datefromseconds datefromms datefromus datefromns base8to10 base16to10 baseto10 basefrom10 lddclean
+
+##################################### git ######################################
+gitdiffeditable() {
+  if [[ $# -ne 2 ]]; then
+    echo 'Usage: gitdiffeditable version file'
+    echo 'E.g.:
+    gitdiffeditable master~10 my_file
+    gitdiffeditable upstream/tensorrt~10 my_file
+    gitdiffeditable 825e7a32e9f4dbad21a9ddb9d8a34bd3e32b1d0e my_file'
+    return
+  fi
+  local tmp_file="/tmp/$RANDOM-${1//\//_}:${2//\//_}"
+  # See 'git help revisions' about how to specify refs.
+  git show "$1:$2" > "$tmp_file"
+  vimdiff "$tmp_file" "$2" -c ':se ro' -c 'wincmd l' -c ':se noreadonly'
+}
+GIT_LOG_FORMAT='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(blue)<%an> %C(magenta)[%ae]%Creset'
+GIT_LOG_FORMAT_SIMPLE='%h -%d %s (%cr) <%an> [%ae]'
+gitgraph() {
+  local format=$GIT_LOG_FORMAT
+  if [[ $1 == '--simple' ]]; then
+    format=$GIT_LOG_FORMAT_SIMPLE
+    shift
+  fi
+  if [[ $# -eq 0 ]]; then
+    set -- --all
+  fi
+  git log --color --graph --abbrev-commit --pretty=format:"$format" "$@"
+}
+gitvimmodified() {
+  vim $(git st --porcelain | sed -ne 's/^ M //p')
+}
+gitdiffLCA() {
+  if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]] || [[ "$1" == '?' ]]; then
+    echo 'Usage: gitdiffLCA [master, etc] [--name-only, --no-pager, and/or other options]'
+    return
+  fi
+  local against=$1
+  if [[ "$#" -eq 0 ]] || [[ "$1" == '--'* ]]; then
+    against=master  # or upstream/master
+  else
+    shift
+  fi
+  local head=HEAD  # or FETCH_HEAD
+  git diff $@ $(git merge-base $against $head) $head --
+}
+
+##################################### tmux #####################################
+new_tmux_session() {
+  if [[ $# -ne 20 ]]; then
+    echo 'Usage:'
+    echo '  new_tmux_session <win0> <path0> <win1> <path1> ... <win9> <path9>'
+    return
+  fi
+  local session=mysession-$1
+  local anysession=$(tmux ls)
+  local running=$(echo $anysession | grep -o $session)
+  # echo $anysession
+  # echo $running
+
+  if [[ $running ]]; then
+    tmux attach -d -t $session
+    return
+  fi
+
+  local tmpconfig=~/.tmux.conf
+  if [[ $anysession ]]; then
+    tmpconfig=/tmp/tmux.conf.$1
+  fi
+
+  cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl        \
+    | sed "s/<mysession>/$session/g"                        \
+    | sed "s/<window0>/$1/g"    | sed "s#<path0>#$2#g"      \
+    | sed "s/<window1>/$3/g"    | sed "s#<path1>#$4#g"      \
+    | sed "s/<window2>/$5/g"    | sed "s#<path2>#$6#g"      \
+    | sed "s/<window3>/$7/g"    | sed "s#<path3>#$8#g"      \
+    | sed "s/<window4>/$9/g"    | sed "s#<path4>#${10}#g"   \
+    | sed "s/<window5>/${11}/g" | sed "s#<path5>#${12}#g"   \
+    | sed "s/<window6>/${13}/g" | sed "s#<path6>#${14}#g"   \
+    | sed "s/<window7>/${15}/g" | sed "s#<path7>#${16}#g"   \
+    | sed "s/<window8>/${17}/g" | sed "s#<path8>#${18}#g"   \
+    | sed "s/<window9>/${19}/g" | sed "s#<path9>#${20}#g"   \
+    > $tmpconfig
+  if [[ $anysession ]]; then
+    tmux source $tmpconfig
+    tmux attach -t $session
+  else
+    tmux attach
+  fi
+}
+tt() { tmux attach -d -t "$@"; }
+td() { tmux detach "$@"; }
+tsendkey() {
+  local session=$1
+  shift
+  tmux send-keys -t mysession:$session "$@" C-m
+}
+
+#################################### docker ####################################
+# docker image prune -a
+# docker container prune
+dockerimages() {
+  docker images | grep -v '^REPOSITORY' | sort
+}
+dockerpullalllocalimages() {
+  docker images | grep -v REPOSITORY | awk '{print $1":"$2}' | xargs -L1 docker pull
+}
+dockerprune_containers_and_images() {
+  docker container prune -f
+  docker image prune -f
+}
+dockertf() {
+  # Don't do --rm.
+  # Remember to run `docker commit <hash> <tag>` after changing something in the
+  # container.
+  local tftag=tensorflow/tensorflow:nightly-gpu
+  local mytag=laigd-docker/tf-nightly-gpu:latest
+  local tag=$tftag
+  if [[ "$(docker images | grep $mytag)" ]]; then
+    tag=$mytag
+  fi
+  # nvidia-docker is also fine.
+  docker run --runtime=nvidia \
+    --mount type=bind,source=/tmp/lambdatfpy,target=/tmp/lambdatfpy \
+    --mount type=bind,source=$DOCKER_ROOT,target=/root \
+    -it $tag bash
+}
+dockerrunsimplewithbash() {
+  local tag=${1:-'laigd/myenv'}
+  if [[ "$tag" == 'laigd/myenv' ]]; then
+    local cuda_major=${cuda_major:-9}
+    local cuda_minor=${cuda_minor:-0}
+    local cudnn_major=${cudnn_major:-7}
+    local cudnn_version_suffix=${cudnn_version_suffix:-5.0.56}
+    local tensorrt_version=${tensorrt_version:-5.1.2}
+    tag=laigd/myenv:cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
+    local tmpdir=$(mktemp -d)
+    mkdir -p $tmpdir
+    pushd $tmpdir
+    docker build --pull -t $tag \
+      --build-arg CUDA_MAJOR_VERSION=${cuda_major} \
+      --build-arg CUDA_MINOR_VERSION=${cuda_minor} \
+      --build-arg CUDNN_MAJOR_VERSION=${cudnn_major} \
+      --build-arg CUDNN_VERSION_SUFFIX=${cudnn_version_suffix} \
+      --build-arg TENSORRT_VERSION=${tensorrt_version} \
+      -f $AAROEY_LIB_DIR/dockerfiles/devel-gpu.Dockerfile ./
+    popd
+  fi
+  # Adding --net=host will change PS1 to **NOT** show the hash.
+  docker run --rm --runtime=nvidia \
+    -v /tmp:/tmp \
+    -v $DOCKER_ROOT:/root \
+    -it "$tag" bash
+}
+
+################################## virtualenv ##################################
+virtualenv_pip_install() {
+  if [[ "$VIRTUAL_ENV" == "" ]]; then
+    >&2 echo 'Error: must be run inside a virtual env!'
+    return
+  fi
+  if [[ "$#" -lt 1 ]]; then
+    >&2 echo 'Usage: virtualenv_pip_install <python_version> [<packages>...]'
+    return
+  fi
+  local pyver=$1
+  shift
+  python$pyver -m pip install --upgrade "$@"
+}
+VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE=412434
+already_in_virtualenv() {
+  if [[ "$VIRTUAL_ENV" != "" ]]; then
+    echo "Already inside a virtualenv environment: $VIRTUAL_ENV"
+  else
+    echo ''
+  fi
+}
+virtualenv_activate() {
+  if [[ $# -ne 2 ]]; then
+    echo 'Usage: activate_virtualenv <absolute_virtualenv_dir> <python_version>'
+    return
+  fi
+  local vedir="$1"
+  if [[ $vedir == '' ]]; then
+    echo 'virtualenv dir must not be empty!'
+    return
+  fi
+  if [[ "$VIRTUAL_ENV" == "$vedir" ]]; then
+    echo 'Already inside the same virtualenv environment, skipping...'
+    return
+  elif [[ "$VIRTUAL_ENV" != "" ]]; then
+    echo "Already inside a different virtualenv environment $VIRTUAL_ENV"
+    echo "Please deactivate and try again."
+    return $VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE
+  fi
+
+  local pyver="$2"
+  local activate_file="$vedir/bin/activate"
+
+  # This is very important! If not using a new dir, when importing modules,
+  # python will import from current dir first! If current dir has a sub dir
+  # whose name is the same as the module it will then import the pyc file from
+  # that sub dir!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  local tmp_working_dir=/tmp/virtualenv/tmp-$RANDOM
+  mkdir -p $tmp_working_dir
+  pushd $tmp_working_dir
+
+  if [[ ! -f "$activate_file" ]]; then
+    mkdir -p $vedir
+    # ****!!!! Do not use --system-site-packages !!!!****
+    # Otherwise pip will install all packages to system site-packages dir!!!!!
+    virtualenv -p python$pyver $vedir
+  fi
+
+  source "$activate_file"
+  # Note @2018/12/06: recordclass, scrapy is not py36 compatible
+  virtualenv_pip_install $pyver \
+    mock ipython recordclass Pillow jupyter numpy \
+    selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
+    Faker \
+    img2html pandas nltk soundfile sox matplotlib \
+    keras_applications keras_preprocessing tensorflow-serving-api
+
+  # if [[ $pyver == '3' ]]; then
+  #   virtualenv_pip_install $pyver something
+  # fi
+
+  popd
+  echo '--> PYTHONPATH:' $PYTHONPATH
+  echo '--> PATH:' $PATH
+  echo '--> LD_LIBRARY_PATH:' $LD_LIBRARY_PATH
+}
+virtualenv_deactivate() {
+  deactivate
+}
+vadtmpl() {
+  local usage='Usage: vadtmpl nightly|<empty> py2|py3 <workspace>'
+  if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]; then
+    echo $usage
+    return
+  fi
+  local tag=$1
+  local pyverstr=$2
+
+  local pyver=''
+  if [[ "$pyverstr" == 'py3' ]]; then
+    pyver=3
+  elif [[ "$pyverstr" == 'py2' ]]; then
+    pyver=2
+  else
+    echo 'Error: python version not specified correctly.'
+    echo $usage
+    return
+  fi
+
+  local dir=$HOME/tmp
+  local veworkspace=$dir/default_virtualenv_workspace
+  local tfpkg=''
+  if [[ "$tag" == 'nightly' ]]; then
+    tfpkg='tf-nightly-gpu'
+  elif [[ "$tag" == '' ]]; then
+    tfpkg='tensorflow-gpu'
+  else
+    dir=~/Workspace/aaroey/$tag
+  fi
+  local vedir="$dir/virtualenv_${pyverstr}"
+  if [[ "$tfpkg" != '' ]]; then
+    vedir="$vedir=$tfpkg"
+  fi
+
+  virtualenv_activate $vedir $pyver
+
+  # Change to the working dir first before installing new packages. This is very
+  # important!! See comments in virtualenv_activate() for more information.
+  mkdir -p $veworkspace
+  pushd $veworkspace
+  if [[ "$tfpkg" ]]; then
+    virtualenv_pip_install $pyver $tfpkg
+  fi
+  if [[ "$3" ]]; then
+    popd
+    pushd "$3"
+  fi
+}
+dav() {
+  virtualenv_deactivate
+  popd
+}
+vad()         { vadtmpl '' py3 "$@";      }
+vadnightly()  { vadtmpl nightly py3 "$@"; }
+vadmytfpy()   { vadtmpl mytfpy3 py3 "$@"; }
+vadmytf2py()  { vadtmpl mytf2py3 py3 "$@"; }
+
+export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install pytf vadtmpl dav
