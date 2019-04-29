@@ -1,0 +1,155 @@
+""""""""""""""""""""""""""" Vundle start
+set nocompatible              " be iMproved, required
+filetype off                  " required
+
+" Set the runtime path to include Vundle and initialize
+" See https://github.com/VundleVim/Vundle.vim on how to set up Vundle for first
+" the time, usually we need to do:
+" - git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+" - Launch vim and run :PluginInstall
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+
+" Let Vundle manage Vundle, required
+Plugin 'gmarik/Vundle.vim'
+
+" Customized plugins. After updates, launch vim and run :PluginInstall
+Plugin 'kien/ctrlp.vim'
+Plugin 'scrooloose/nerdtree'
+Plugin 'techlivezheng/vim-plugin-minibufexpl'
+Plugin 'vim-scripts/a.vim'
+Plugin 'vim-scripts/AnsiEsc.vim'
+
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+filetype plugin indent on    " required
+
+""""""""""""""""""""""""""" Other stuff
+set autochdir " Automatically change the working directory to the current one
+set autoread
+set clipboard=unnamedplus       " Yank to the X window clipboard (Only in Vim 7.3.74+)
+set expandtab                   " Force this again although it may be done before
+set hlsearch                    " Highlight previous search results
+set incsearch                   " Do incremental searching
+set matchpairs=(:),{:},[:],<:>
+set number                      " Set line numbers
+set shiftwidth=2                " Force this again although it may be done before
+set showmatch                   " Show matching braces / brackets
+set showmode                    " Show the mode you're currently in
+set softtabstop=2               " Make tabs act like spaces for editing ops
+set title                       " Let vim change my tab/window title
+set wildmode=longest,list,full  " Completion modes for wildcard expansion
+
+" au BufEnter * silent! lcd %:p:h  " old way of autochdir
+" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+
+""""""""""""""""""""""""""" Clang Format
+" autocmd BufWritePre * :ClangFormat
+" nnoremap <C-K> :ClangFormat<CR>
+" vnoremap <C-K> :ClangFormat<CR>
+" inoremap <C-K> <ESC> :ClangFormat<CR>
+
+" Use -style=file to load style configuration from .clang-format file located in
+" one of the parent directories of the source file
+" :!clang-format -i -style=file %:p
+
+" au BufWrite {*.c,*.h,*.cc,*.cpp} :<like-following> " This doesn't work???
+" nnoremap ,cl :!clang-format -i -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}" %:p<CR><CR>
+" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
+" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: true, PointerAlignment: Right, BinPackArguments: true, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
+" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: true, PointerAlignment: Left, BinPackArguments: true, BinPackParameters: true, AllowAllParametersOfDeclarationOnNextLine: false, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
+nnoremap ,cl :%!clang-format<CR><CR>
+
+""""""""""""""""""""""""""" Forcing vimdiff to wrap lines
+au VimEnter * if &diff | execute 'windo set wrap' | endif
+
+""""""""""""""""""""""""""" Fast switch to different split screens
+noremap <C-J> <C-W>j
+noremap <C-K> <C-W>k
+noremap <C-H> <C-W>h
+noremap <C-L> <C-W>l
+" doesn't work???
+" noremap <A-J> <C-W>j
+" noremap <A-K> <C-W>k
+" noremap <A-H> <C-W>h
+" noremap <A-L> <C-W>l
+
+""""""""""""""""""""""""""" Other hotkey
+" Uses Alt in addition to Ctrl
+" doesn't work???
+" noremap <A-F> <C-F>
+" noremap <A-B> <C-B>
+" noremap <A-V> <C-V>
+
+noremap ,sp :set paste<CR>
+noremap ,snp :set nopaste<CR>
+noremap ,v :86vs<CR><C-W>l
+noremap ,r :vertical resize 86<CR>
+noremap ,do :diffoff<CR>:set foldcolumn=0<CR>:set nocrb<CR>:set noscb<CR>
+noremap ,{ wbi{<ESC>ea}<ESC>
+noremap ,[ wbi[<ESC>ea]<ESC>
+noremap ,( wbi(<ESC>ea)<ESC>
+noremap ,< wbi<<ESC>ea><ESC>
+noremap ," wbi"<ESC>ea"<ESC>
+noremap ,' wbi'<ESC>ea'<ESC>
+noremap ,jc wbi{@code <ESC>ea}<ESC>
+noremap ,ds wbyw:r !date -d@<C-R>0 "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,dms wbyw:r !date -d@$(echo <C-R>0/1000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,dus wbyw:r !date -d@$(echo <C-R>0/1000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,dns wbyw:r !date -d@$(echo <C-R>0/1000000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+
+""""""""""""""""""""""""""" Store/Resume view setting
+au BufWinLeave ?* silent mkview  " '?' stands for any single character
+au BufWinEnter ?* silent loadview
+
+""""""""""""""""""""""""""" Status line
+" set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=\%03.3b]\ [HEX=\%02.2B]\ [POS=%04l,%04v]\ [%p%%]\ [LEN=%L]
+" set statusline=%F%m%r%h%w\ \ -\ \ [ASCII]\ \%03.3b\ \ -\ \ [HEX]\ \%02.2B\ \ -\ \ [LEN]\ %L\ \ -\ \ %l,\ %v\ \ -\ \ %p%%
+set statusline=%F%m%r%h%w\ \ -\ \ [LEN]\ %L\ \ -\ \ %l,\ %v\ \ -\ \ %p%%
+
+""""""""""""""""""""""""""" For nerdtree
+" au vimenter * NERDTree
+nnoremap ,ne :NERDTree<CR>
+nnoremap ,nc :NERDTreeClose<CR>
+
+""""""""""""""""""""""""""" Additional basic settings. Order *matters*
+set nrformats=alpha,octal,hex
+set showcmd
+set tabstop=2
+set wildignorecase  " Ignore case for file/dir completion
+set cursorline
+" set history=65536
+
+" filetype on
+" filetype plugin on
+" filetype indent on
+" syntax on
+
+colorscheme koehler
+syntax enable
+
+" For Split screen users: higlight the status line of the active window
+set laststatus=2  " Always display the last status
+" hi StatusLine ctermfg=16 ctermbg=blue
+hi StatusLine ctermfg=yellow ctermbg=blue
+hi StatusLineNC ctermfg=59 ctermbg=145
+set colorcolumn=81
+
+""""""""""""""""""""""""""" For vimdiff
+" See this for colors:
+" http://vim.wikia.com/wiki/Xterm256_color_names_for_console_Vim?file=Xterm-color-table.png
+" hi DiffAdd    cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
+" hi DiffDelete cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
+" hi DiffChange cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
+" hi DiffText   cterm=bold ctermfg=10 ctermbg=20 gui=none guifg=bg guibg=Red
+
+""""""""""""""""""""""""""" For minibufexpl
+hi MBENormal               ctermfg=cyan
+hi MBEChanged              ctermfg=magenta
+hi MBEVisibleNormal        ctermfg=red cterm=NONE
+hi MBEVisibleChanged       ctermfg=red cterm=NONE
+hi MBEVisibleActiveNormal  ctermfg=red
+hi MBEVisibleActiveChanged ctermfg=red
+
+""""""""""""""""""""""""""" Other tips
+" :vs119 for the nerd tree.

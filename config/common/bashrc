@@ -1,3 +1,23 @@
+# Usage:
+# * Step 1:
+# mkdir -p $HOME/Workspace/aaroey
+# git clone https://github.com/aaroey/aaroey-lib.git $HOME/Workspace/aaroey/aaroey-lib
+#
+# * Step 2: copy the following to your ~/.bashrc:
+#
+# AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
+# init_aaroey_lib() {
+#   if ! [[ -d $AAROEY_LIB_DIR ]]; then
+#     mkdir -p ${AAROEY_LIB_DIR%/*}
+#     git clone https://github.com/aaroey/aaroey-lib.git $AAROEY_LIB_DIR
+#   fi
+#   pushd $AAROEY_LIB_DIR
+#   git pull origin master
+#   source $AAROEY_LIB_DIR/config/common/bashrc
+#   popd
+# }
+# init_aaroey_lib
+
 ################################# Init scripts #################################
 
 # The local root of the cloned repository.
@@ -5,7 +25,7 @@ AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
 AAROEY_LIB_CONFIG_COMMON_DIR=$AAROEY_LIB_DIR/config/common
 DOCKER_ROOT=$HOME/Workspace/dockerroot
 
-makedockerroot() {
+make_docker_root() {
   if [[ -d $DOCKER_ROOT ]]; then return; fi
 
   # Copy things in the repo to a local directory and make it root of docker.
@@ -60,9 +80,14 @@ export_ps1() {
     export PS1="(${VIRTUAL_ENV/*\//}) $my_ps1"
   fi
 }
+init_vundle() {
+  if [[ -d ~/.vim/bundle/Vundle.vim ]]; then return; fi
+  git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+}
 init() {
-  makedockerroot
+  make_docker_root
   export_ps1
+  init_vundle
 }
 init
 
@@ -532,4 +557,4 @@ vadnightly()  { vadtmpl nightly py3 "$@"; }
 vadmytfpy()   { vadtmpl mytfpy3 py3 "$@"; }
 vadmytf2py()  { vadtmpl mytf2py3 py3 "$@"; }
 
-export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install pytf vadtmpl dav
+export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
