@@ -1,5 +1,12 @@
 # To build, do:
 # $ docker build --pull -t laigd/myenv -f <this file> ./
+#
+# See http://dev.im-bot.com/docker-select-caching/ on how to rebuild with
+# selected cache. Basically we need to do:
+
+# - Add this and below command will run without cache `ARG CACHEBUST=1`
+# - When you need to rebuild with selected cache, run it with --build-arg option
+#   `$ docker build -t your-image --build-arg CACHEBUST=$(date +%s) .`
 
 ARG UBUNTU_VERSION=16.04
 ARG CUDA_MAJOR_VERSION=9
