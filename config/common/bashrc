@@ -466,6 +466,7 @@ already_in_virtualenv() {
     echo ''
   fi
 }
+OLD_PYTHONPATH=''
 virtualenv_activate() {
   if [[ $# -ne 2 ]]; then
     echo 'Usage: activate_virtualenv <absolute_virtualenv_dir> <python_version>'
@@ -516,6 +517,10 @@ virtualenv_activate() {
   #   virtualenv_pip_install $pyver something
   # fi
 
+  # Change the PYTHONPATH:
+  # OLD_PYTHONPATH=$PYTHONPATH
+  # export PYTHONPATH=$(python -c "import sys; site_packages = next(p for p in sys.path if 'site-packages' in p); print(site_packages)")
+
   popd
   echo '--> PYTHONPATH:' $PYTHONPATH
   echo '--> PATH:' $PATH
@@ -523,6 +528,7 @@ virtualenv_activate() {
 }
 virtualenv_deactivate() {
   deactivate
+  # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
   local usage='Usage: vadtmpl nightly|<empty> py2|py3 <workspace>'
@@ -549,6 +555,8 @@ vadtmpl() {
   local tfpkg=''
   if [[ "$tag" == 'nightly' ]]; then
     tfpkg='tf-nightly-gpu'
+  elif [[ "$tag" == 'nightlyv2' ]]; then
+    tfpkg='tf-nightly-gpu-2.0-preview'   # See https://pypi.org/project/tf-nightly-gpu-2.0-preview/#history
   elif [[ "$tag" == '' ]]; then
     tfpkg='tensorflow-gpu'
   else
@@ -577,9 +585,10 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vad()         { vadtmpl '' py3 "$@";      }
-vadnightly()  { vadtmpl nightly py3 "$@"; }
-vadmytfpy()   { vadtmpl mytfpy3 py3 "$@"; }
-vadmytf2py()  { vadtmpl mytf2py3 py3 "$@"; }
+vad()          { vadtmpl '' py3 "$@";        }
+vadnightly()   { vadtmpl nightly py3 "$@";   }
+vadnightlyv2() { vadtmpl nightlyv2 py3 "$@"; }
+vadmytfpy()    { vadtmpl mytfpy3 py3 "$@";   }
+vadmytf2py()   { vadtmpl mytf2py3 py3 "$@";  }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
