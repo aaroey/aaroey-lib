@@ -313,6 +313,7 @@ gitvimmodified() {
 gitdiffLCA() {
   if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]] || [[ "$1" == '?' ]]; then
     echo 'Usage: gitdiffLCA [master, etc] [--name-only, --no-pager, and/or other options]'
+    echo 'If it prompts `Not a valid object name upstream:master` we need to do `git fetch upstream` first.'
     return
   fi
   local against=$1
@@ -322,7 +323,9 @@ gitdiffLCA() {
     shift
   fi
   local head=HEAD  # or FETCH_HEAD
-  git diff $@ $(git merge-base $against $head) $head --
+  local merge_base=$(git merge-base $against $head)
+  echo "Merge base: $merge_base"
+  git diff $@ $merge_base $head --
 }
 
 ##################################### tmux #####################################
