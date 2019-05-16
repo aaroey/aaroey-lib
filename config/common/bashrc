@@ -407,7 +407,7 @@ dockertf() {
   # Remember to run `docker commit <hash> <tag>` after changing something in the
   # container.
   local tftag=tensorflow/tensorflow:nightly-gpu
-  local mytag=laigd-docker/tf-nightly-gpu:latest
+  local mytag=lam8da/tf-nightly-gpu:latest
   local tag=$tftag
   if [[ "$(docker images | grep $mytag)" ]]; then
     tag=$mytag
