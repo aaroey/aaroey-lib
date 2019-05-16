@@ -47,18 +47,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         software-properties-common \
         unzip zip zlib1g-dev wget curl git tmux vim iputils-ping \
         libcupti-dev libtool automake \
-        && \
-    find /usr/local/cuda-${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete && \
-    rm /usr/lib/x86_64-linux-gnu/libcudnn_static_v${CUDNN_MAJOR_VERSION}.a
+    && find /usr/local/cuda-${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete \
+    && rm /usr/lib/x86_64-linux-gnu/libcudnn_static_v${CUDNN_MAJOR_VERSION}.a
 
 # TensorRT will be installed in /usr/lib/x86_64-linux-gnu
-ARG TENSORRT_VERSION=5.1.2
-ENV NVIDIA_ML_REPO=https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64
-RUN mkdir /nvinfer && \
-    wget -O /nvinfer/libnvinfer.deb ${NVIDIA_ML_REPO}/libnvinfer5_${TENSORRT_VERSION}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}_amd64.deb && \
-    wget -O /nvinfer/libnvinfer-dev.deb ${NVIDIA_ML_REPO}/libnvinfer-dev_${TENSORRT_VERSION}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}_amd64.deb && \
-    dpkg -i /nvinfer/libnvinfer.deb /nvinfer/libnvinfer-dev.deb && \
-    rm -rf /nvinfer
+ARG TENSORRT_VERSION=5.1.5
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnvinfer5=${TENSORRT_VERSION}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
+    libnvinfer-dev=${TENSORRT_VERSION}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}
 
 # Configure the build for our CUDA configuration.
 ENV CI_BUILD_PYTHON python
@@ -78,45 +74,43 @@ ARG PIP=pip${_PY_SUFFIX}
 ENV LANG C.UTF-8
 
 RUN apt-get update && apt-get install -y \
-    ${PYTHON} \
-    ${PYTHON}-pip \
-    ${PYTHON}-dev \
-    ${PYTHON}-numpy \
-    ${PYTHON}-wheel \
-    ${PYTHON}-virtualenv \
-    ${PYTHON}-tk
+        ${PYTHON} \
+        ${PYTHON}-pip \
+        ${PYTHON}-dev \
+        ${PYTHON}-numpy \
+        ${PYTHON}-wheel \
+        ${PYTHON}-virtualenv \
+        ${PYTHON}-tk
 
 RUN ${PIP} --no-cache-dir install --upgrade \
-    pip \
-    setuptools
+        pip \
+        setuptools
 
 # Some TF tools expect a "python" binary
 RUN ln -s $(which ${PYTHON}) /usr/local/bin/python
 
-RUN apt-get update && apt-get install -y \
-    openjdk-8-jdk \
-    swig
+RUN apt-get update && apt-get install -y openjdk-8-jdk swig
 
 RUN ${PIP} --no-cache-dir install \
-    Pillow \
-    requests \
-    h5py \
-    keras_applications \
-    keras_preprocessing \
-    matplotlib \
-    mock \
-    numpy \
-    scipy \
-    sklearn \
-    pandas \
-    && test "${USE_PYTHON_3_NOT_2}" -eq 1 && true || ${PIP} --no-cache-dir install \
-    enum34
+        Pillow \
+        requests \
+        h5py \
+        keras_applications \
+        keras_preprocessing \
+        matplotlib \
+        mock \
+        numpy \
+        scipy \
+        sklearn \
+        pandas \
+    && test "${USE_PYTHON_3_NOT_2}" -eq 1 \
+    && true || ${PIP} --no-cache-dir install enum34
 
 # Install bazel
 ARG BAZEL_VERSION=0.22.0
-RUN mkdir /bazel && \
-    wget -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
-    wget -O /bazel/LICENSE.txt "https://raw.githubusercontent.com/bazelbuild/bazel/master/LICENSE" && \
-    chmod +x /bazel/installer.sh && \
-    /bazel/installer.sh && \
-    rm -f /bazel/installer.sh
+RUN mkdir /bazel \
+    && wget -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh" \
+    && wget -O /bazel/LICENSE.txt "https://raw.githubusercontent.com/bazelbuild/bazel/master/LICENSE" \
+    && chmod +x /bazel/installer.sh \
+    && /bazel/installer.sh \
+    && rm -f /bazel/installer.sh
