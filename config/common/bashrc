@@ -415,8 +415,8 @@ dockerrunsimplewithbash() {
     local cuda_major=${cuda_major:-9}
     local cuda_minor=${cuda_minor:-0}
     local cudnn_major=${cudnn_major:-7}
-    local cudnn_version_suffix=${cudnn_version_suffix:-5.0.56}
-    local tensorrt_version=${tensorrt_version:-5.1.2}
+    local cudnn_version_suffix=${cudnn_version_suffix:-5.1.10}
+    local tensorrt_version=${tensorrt_version:-5.1.5}
     local tag_suffix=cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
     tag=$mydockerrepo:$tag_suffix
 
