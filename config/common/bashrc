@@ -1,22 +1,6 @@
 # Usage:
-# * Step 1: download this script:
-# mkdir -p $HOME/Workspace/aaroey
-# git clone https://github.com/aaroey/aaroey-lib.git $HOME/Workspace/aaroey/aaroey-lib
-#
-# * Step 2: copy the following to your ~/.bashrc:
-#
-# AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
-# init_aaroey_lib() {
-#   if ! [[ -d $AAROEY_LIB_DIR ]]; then
-#     mkdir -p ${AAROEY_LIB_DIR%/*}
-#     git clone https://github.com/aaroey/aaroey-lib.git $AAROEY_LIB_DIR
-#   fi
-#   pushd $AAROEY_LIB_DIR
-#   git pull origin master
-#   source $AAROEY_LIB_DIR/config/common/bashrc
-#   popd
-# }
-# init_aaroey_lib
+# 1. mkdir -p $HOME/Workspace/aaroey
+# 2. copy & paste the content in ../../docker/root/.bashrc to your ~/.bashrc
 
 ################################# Init scripts #################################
 
@@ -379,6 +363,15 @@ tsendkey() {
   tmux send-keys -t mysession:$session "$@" C-m
 }
 
+################################# nvidia gpu ###################################
+cuda_version() {
+  # This doesn't work under some system.
+  # nvidia-smi | grep -o CUDA.* | sed 's/CUDA Version: //g;s/ .*//g'
+  nvcc --version | grep -o  release.* | sed 's/release //g;s/,.*//g'
+}
+
+export -f cuda_version
+
 #################################### docker ####################################
 # docker image prune -a
 # docker container prune
@@ -442,6 +435,8 @@ dockerrunsimplewithbash() {
         && docker push $tag
       popd
     fi
+  else
+    docker pull "$tag"
   fi
   # Adding --net=host will change PS1 to **NOT** show the hash.
   docker_run_with_nvidia "$tag" --rm
