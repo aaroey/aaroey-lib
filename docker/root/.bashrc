@@ -4,7 +4,7 @@ init_aaroey_lib() {
     mkdir -p ${AAROEY_LIB_DIR%/*}
     git clone https://github.com/aaroey/aaroey-lib.git $AAROEY_LIB_DIR
     pushd $AAROEY_LIB_DIR
-    git config user.name aaroey
+    git config user.name 'Guangda Lai'
     git config user.email 31743510+aaroey@users.noreply.github.com
     popd
   fi

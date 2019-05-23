@@ -51,7 +51,7 @@ export_ps1() {
   # \W : the basename of the current working directory, with $HOME abbreviated with a tilde
   # \! : the history number of this command
   # \# : the command number of this command
-    # \$ : if the effective UID is 0, a #, otherwise a $
+  # \$ : if the effective UID is 0, a #, otherwise a $
   # \nnn : the character corresponding to the octal number nnn
   # \\ : a backslash
   # \[ : begin a sequence of non-printing characters, which could be used to embed a terminal control sequence into the prompt
@@ -381,6 +381,20 @@ gitfixauthorandemails() {
   echo "$ git checkout master"
   echo "$ git reset --hard origin/master"
 }
+gitcommitpush() {
+  git add -u
+  git commit -m "$@"
+  git push origin master
+}
+# Useful commands:
+# - $ git remote set-url origin https://<user>@github.com/<user>/<user>.github.io
+# - To fix the identity used for the last commit **after** changing
+#   user.name/email globally:
+#   $ git commit --amend --reset-author
+# - To push a repository with a credential that is different than the default
+#   one:
+#   $ git -c credential.helper= push origin master
+#   See https://stackoverflow.com/questions/13198143/how-do-i-disable-gits-credential-helper-for-a-single-repository/13203623#13203623
 
 ##################################### tmux #####################################
 new_tmux_session() {
