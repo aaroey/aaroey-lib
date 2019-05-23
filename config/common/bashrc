@@ -95,6 +95,12 @@ init() {
 init
 
 ##################################### bash #####################################
+# Size of the history file.
+export HISTFILESIZE=10000000
+# Number of commands be printed each time we run 'history' in bash.
+export HISTSIZE=10000000
+export EDITOR='vim'  # use 'gvim -f' if you want to use GUI vim.
+
 NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
 
 sb() { exec bash; }
@@ -675,3 +681,94 @@ vadmytfpy()    { vadtmpl mytfpy3 py3 "$@";   }
 vadmytf2py()   { vadtmpl mytf2py3 py3 "$@";  }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
+
+##################################### misc #####################################
+
+# Setting evoluent mouse button mappings, see
+# - https://shkspr.mobi/blog/2011/06/review-evoluent-vertical-mouse-4-and-how-to-make-it-work-in-ubuntu/
+# - http://www.mrericsir.com/blog/technology/using-an-evoluent-verticalmouse-4-on-linux/
+# - http://wiki.mbirth.de/know-how/software/linux/remapping-mouse-buttons.html
+# - http://wiki.mbirth.de/know-how/hardware/evoluent-verticalmouse.html
+#
+# $ xinput list
+# > ↳ Kingsis Peripherals Evoluent VerticalMouse 4   id=12   [slave pointer (2)]
+# In following the <device-id> is 12 for the above case.
+#
+# Press and hold some button and run the this will tell you which id is down:
+# $ xinput query-state <device-id>
+# Re-map the buttons:
+#                           input id: 1 2 3 4 5 6 7 8 9 10 11
+# $ xinput set-button-map <device-id> 1 2 3 4 5 0 0 9 0 8
+#
+# To make it persistent:
+# $ lsusb | grep 'Evoluent VerticalMouse'
+# > Bus 002 Device 005: ID 1a7c:0191 Evoluent VerticalMouse 4
+# $ sudo touch /usr/share/X11/xorg.conf.d/90-evoluent.conf
+# $ sudo gedit /usr/share/X11/xorg.conf.d/90-evoluent.conf
+# then put:
+# Section "InputClass"
+#   Identifier "Evoluent"
+#   MatchUSBID "1a7c:0191"
+#   Option "ButtonMapping" "1 2 3 4 5 0 0 9 0 8 0"
+# EndSection
+
+# use '[' as delimeter and the second part as key in number order
+# sort -t [ -k 2 -n
+
+# bash in vi-mode you can press v in normal mode to edit the command similarly
+# to Ctrl-X Ctrl-E
+
+X_SET=''
+# TODO(aaroey): use a stack to record the sequence of calls to these methods and
+# pop the last state in reset_x
+set_x_if_not_set() {
+  if [[ "$-" == *x* ]]; then
+    X_SET=1
+  else
+    X_SET=0
+    set -x
+  fi
+}
+unset_x_if_set() {
+  if [[ "$-" == *x* ]]; then
+    set +x
+    X_SET=1
+  else
+    X_SET=0
+  fi
+}
+reset_x() {
+  if [[ $X_SET ]]; then
+    set -x
+  else
+    set +x
+  fi
+}
+printsplitline() {
+  local console_width=$(tput cols)
+  # local console_width=$COLUMNS  # Seems not working in embedded shell.
+  local prefix=${1:-''}
+  local suffix=${2:-''}
+  local prefix_len=${#prefix}
+  local suffix_len=${#suffix}
+  local line_len=$[$console_width-$prefix_len-$suffix_len]
+  >&2 printf "$prefix"
+  >&2 printf '=%.0s' $(seq 1 ${line_len})
+  >&2 printf "$suffix"
+  >&2 echo
+}
+printsplitlines() {
+  printsplitline
+  printsplitline "$@"
+}
+printsplitlinesnox() {
+  unset_x_if_set
+  printsplitlines "$@"
+  reset_x
+}
+runperiodically() {
+  for ((i=0;i<1000;++i)); do
+    echo $i $@
+    $@
+  done
+}
