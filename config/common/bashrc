@@ -1,6 +1,12 @@
 # Usage:
 # 1. mkdir -p $HOME/Workspace/aaroey
 # 2. copy & paste the content in ../../docker/root/.bashrc to your ~/.bashrc
+#
+# For mac, to update to newest bash, do:
+# $ brew update && brew install bash
+# $ sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'
+# $ chsh -s /usr/local/bin/bash 
+# Then restart all the terminals.
 
 ################################# Init scripts #################################
 
@@ -92,8 +98,26 @@ init
 NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
 
 sb() { exec bash; }
+vimbashrc() {
+  vim ~/.bashrc $AAROEY_LIB_DIR/config/common/bashrc
+}
+vimvimrc() {
+  vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc
+}
 clearscreen() {
   clear && echo -en "\e[3J"
+}
+findfileslargerthan() {
+  local filename_output=$(mktemp /tmp/XXXXXX)
+  local largest_fileinfo_output=$(mktemp /tmp/XXXXXX)
+
+  echo "Writing large file names output to $filename_output ..."
+  # Find files larger than $2 and sort them by size
+  find "${1:-$HOME}" -type f -size +"${2:-50M}" -ls | sort -nr -k 7,7 | sed 's/^[^/]*//' > $filename_output
+
+  echo "Writing largest file info output to $largest_fileinfo_output ..."
+  (while IFS= read -r i; do ls -alh -color "$i"; done) < $filename_output > $largest_fileinfo_output
+  head -n 20 $largest_fileinfo_output
 }
 # We can add option -l to grep to show only filename instead of matched content
 fgpdir() {
@@ -241,6 +265,8 @@ ht() {
      | sed 's/^[0-9]\+\t*//'
 }
 # export PROMPT_COMMAND='history -a; history -r'
+# export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+export AAROEY_OLD_PROMPT_COMMAND="$PROMPT_COMMAND"
 export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 uniqbashhistory() {
   local tmpfile=/tmp/bash-history-$RANDOM
@@ -311,6 +337,50 @@ gitdiffLCA() {
   echo "Merge base: $merge_base"
   git diff $@ $merge_base $head --
 }
+gitpurgecommithistory() {
+  local answer=No
+  read -p 'Are you sure to purge all commit log? No/yes: ' answer
+  if [[ "$answer" == 'yes' ]]; then
+    answer=No
+    read -p 'Are you really sure? No/yes: ' answer
+    if [[ "$answer" == 'yes' ]]; then
+      git checkout --orphan latest_branch
+      git add -A
+      git commit -am "Rebase"
+      git branch -D master
+      git branch -m master
+      git push -f origin master
+    fi
+  fi
+}
+gitfixauthorandemails() {
+  if [[ $# -lt 2 ]] || [[ $# -gt 3 ]]; then
+    echo 'Usage: gitfixauthorandemails <correct_author> <correct_email> [<old_email>]'
+    return
+  fi
+  local correct_author=$1
+  local correct_email=$2
+  local old_email=$3
+
+  git filter-branch --env-filter '
+    CORRECT_NAME="'"$correct_author"'"
+    CORRECT_EMAIL="'"$correct_email"'"
+    if [[ '"$old_email"' == "" ]] || [[ "$GIT_COMMITTER_EMAIL" == '"$old_email"' ]]; then
+      export GIT_COMMITTER_NAME="$CORRECT_NAME"
+      export GIT_COMMITTER_EMAIL="$CORRECT_EMAIL"
+      export GIT_AUTHOR_NAME="$CORRECT_NAME"
+      export GIT_AUTHOR_EMAIL="$CORRECT_EMAIL"
+    fi
+    ' --tag-name-filter cat -- --branches --tags
+  # See https://stackoverflow.com/questions/7654822/remove-refs-original-heads-master-from-git-repo-after-filter-branch-tree-filte for details.
+  echo "Updated the author and email of all local commits."
+  echo "Next step: after carefully reviewing the changed history, run:"
+  echo "$ git push --force --tags origin 'refs/heads/*'"
+  echo "$ git update-ref -d refs/original/refs/heads/master"
+  echo "For a different client repo which tracks the origin, run:"
+  echo "$ git checkout master"
+  echo "$ git reset --hard origin/master"
+}
 
 ##################################### tmux #####################################
 new_tmux_session() {
@@ -355,6 +425,7 @@ new_tmux_session() {
     tmux attach
   fi
 }
+# -d means to detach other attached clients
 tt() { tmux attach -d -t "$@"; }
 td() { tmux detach "$@"; }
 tsendkey() {
