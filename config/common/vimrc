@@ -58,6 +58,7 @@ set autochdir
 " au BufEnter * silent! lcd %:p:h
 
 set autoindent
+
 set autoread
 
 " Don't use in my mac.
@@ -269,6 +270,15 @@ nmap ,mpt <Plug>MarkdownPreviewToggle
 "   Plug 'junegunn/vim-xmark'
 " endif
 " See https://github.com/junegunn/vim-plug/wiki/tips#automatic-installation
+
+" Other useful plugins:
+" * http://blog.miskcoo.com/2017/05/vim-useful-plugins
+"   - YouCompleteMe
+"   - Jedi-Vim
+"   - Vim-Latex
+"   - Markdown-Preview
+" * https://www.jiqizhixin.com/articles/19040101
+" * https://castel.dev/post/lecture-notes-1/
 
 " -----------------------------------------------------------------------------
 " The following settings were originally added by lambda at Nov.20, 2012.
