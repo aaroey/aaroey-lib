@@ -1,4 +1,4 @@
-"""""""""""""""""""""""""""""""" For vim-plug """""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""" For vim-plug """"""""""""""""""""""""""""""""""
 set nocompatible              " be iMproved, required
 
 if empty(glob('~/.vim/autoload/plug.vim'))
@@ -20,6 +20,9 @@ Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
 " https://github.com/lervag/vimtex
 Plug 'lervag/vimtex'
 
+" https://github.com/SirVer/ultisnips
+Plug 'SirVer/ultisnips'
+
 " For code formatting. See https://github.com/google/vim-codefmt
 Plug 'google/vim-maktaba'
 Plug 'google/vim-codefmt'
@@ -38,7 +41,7 @@ Plug 'vim-scripts/AnsiEsc.vim'
 
 call plug#end()
 
-"""""""""""""""""""""""""""""""" For codefmt """"""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""" For codefmt """""""""""""""""""""""""""""""""""
 " the glaive#Install() should go after the `call plug#end()`
 call glaive#Install()
 " Optional: Enable codefmt's default mappings on the <Leader>= prefix.
@@ -51,7 +54,7 @@ nnoremap ,fc ::FormatCode<CR>:w<CR>
 " nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
 nnoremap ,cl :%!clang-format<CR><CR>
 
-""""""""""""""""""""""""""""""" Basic settings """"""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""" Basic settings """""""""""""""""""""""""""""""""
 " Automatically change the working directory to the current one
 set autochdir
 " Alternative solution:
@@ -92,6 +95,10 @@ set wildmode=longest,list,full  " Completion modes for wildcard expansion
 set colorcolumn=81
 set wildignorecase              " Ignore case for file/dir completion
 set cursorline
+set cursorcolumn
+
+" hi CursorLine   cterm=NONE ctermbg=darkgray ctermfg=NONE "guibg=lightgrey guifg=white
+" hi CursorColumn cterm=NONE ctermbg=darkgray ctermfg=NONE "guibg=lightgrey guifg=white
 
 " set statusline=%F%m%r%h%w\ \ -\ \ [ASCII]\ \%03.3b\ \ -\ \ [HEX]\ \%02.2B\ \ -\ \ [LEN]\ %L\ \ -\ \ %03l,\ %03v\ \ -\ \ %p%%
 " set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=\%03.3b]\ [HEX=\%02.2B]\ [POS=%04l,%04v]\ [%p%%]\ [LEN=%L]
@@ -105,9 +112,29 @@ filetype indent on
 syntax enable
 syntax on
 
-" Store/Resume view setting
+" Store/resume view setting
 au BufWinLeave ?* silent mkview  " '?' stands for any single character
 au BufWinEnter ?* silent loadview
+
+" Function to permanently delete views created by 'mkview'
+function! MyDeleteView()
+  let path = fnamemodify(bufname('%'),':p')
+  " vim's odd =~ escaping for /
+  let path = substitute(path, '=', '==', 'g')
+  if empty($HOME)
+  else
+    let path = substitute(path, '^'.$HOME, '\~', '')
+  endif
+  let path = substitute(path, '/', '=+', 'g') . '='
+  " view directory
+  let path = &viewdir.'/'.path
+  call delete(path)
+  echo "Deleted: ".path
+endfunction
+
+" # Command Delview (and it's abbreviation 'delview')
+nnoremap ,dv :call MyDeleteView()<CR>
+
 au BufNewFile,BufFilePre,BufRead *.md set filetype=markdown
 
 " Forcing vimdiff to wrap lines
@@ -130,6 +157,7 @@ noremap <C-L> <C-W>l
 noremap ,v :86vs<CR><C-L>
 noremap ,r :vertical resize 86<CR>
 noremap ,sp :set paste<CR>
+noremap ,so :source ~/.vimrc<CR>
 noremap ,snp :set nopaste<CR>
 noremap ,do :diffoff<CR>:set foldcolumn=0<CR>:set nocrb<CR>:set noscb<CR>
 noremap ,ds wbyw:r !date -d@<C-R>0 "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
@@ -138,7 +166,7 @@ noremap ,dms wbyw:r !date -d@$(echo <C-R>0/1000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S
 noremap ,dus wbyw:r !date -d@$(echo <C-R>0/1000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
 noremap ,dns wbyw:r !date -d@$(echo <C-R>0/1000000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
 
-"""""""""""""""""""""""""""""" For writing blog """""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""" For writing blog """"""""""""""""""""""""""""""""
 noremap ,{ wbi{<ESC>ea}<ESC>
 noremap ,[ wbi[<ESC>ea]<ESC>
 noremap ,( wbi(<ESC>ea)<ESC>
@@ -152,7 +180,20 @@ noremap ,s i<span style="color: blue"><ESC>
 " For mathjax
 noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 
-""""""""""""""""""""""""""""""" For minibufexpl """""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""" For vimtex """""""""""""""""""""""""""""""""""
+" let g:tex_flavor='latex'
+" let g:vimtex_view_method='zathura'
+" let g:vimtex_quickfix_mode=0
+" set conceallevel=1
+" let g:tex_conceal='abdmg'
+
+"""""""""""""""""""""""""""""""" For UltiSnips """""""""""""""""""""""""""""""""
+let g:UltiSnipsExpandTrigger = '<tab>'
+let g:UltiSnipsJumpForwardTrigger = '<tab>'
+let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
+let g:UltiSnipsSnippetDirectories = ['UltiSnips', '~/Workspace/aaroey/aaroey-lib/config/common/ultisnips']
+
+"""""""""""""""""""""""""""""""" For minibufexpl """""""""""""""""""""""""""""""
 hi MBENormal               ctermfg=cyan
 hi MBEChanged              ctermfg=magenta
 " hi MBEVisibleNormal        ctermfg=red
@@ -164,12 +205,12 @@ hi MBEVisibleChanged       ctermfg=red cterm=NONE
 hi MBEVisibleActiveNormal  ctermfg=red
 hi MBEVisibleActiveChanged ctermfg=red
 
-"""""""""""""""""""""""""""""""" For nerdtree """""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""" For nerdtree """""""""""""""""""""""""""""""""
 " au vimenter * NERDTree
 noremap ,nt :NERDTree<CR>
 noremap ,ntc :NERDTreeClose<CR>
 
-"""""""""""""""""""""""""""" For markdown-preview """""""""""""""""""""""""""""
+""""""""""""""""""""""""""""" For markdown-preview """""""""""""""""""""""""""""
 " https://github.com/iamcco/markdown-preview.nvim
 
 " set to 1, nvim will open the preview window after entering the markdown buffer
@@ -250,17 +291,11 @@ let g:mkdp_port = ''
 " ${name} will be replace with the file name
 let g:mkdp_page_title = '「${name}」'
 
-" normal/insert
-" <Plug>MarkdownPreview
-" <Plug>MarkdownPreviewStop
-" <Plug>MarkdownPreviewToggle
-
-" example
 nmap ,mp <Plug>MarkdownPreview
 nmap ,mps <Plug>MarkdownPreviewStop
 nmap ,mpt <Plug>MarkdownPreviewToggle
 
-""""""""""""""""""""""""""""""""" Other tips """"""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""" Other tips """""""""""""""""""""""""""""""""""
 " Examples of how to use <Plug>:
 " nnoremap <Plug>(HelloWorld) :echo "hello world!"<CR>
 " nmap s <Plug>(HelloWorld)
@@ -284,20 +319,20 @@ nmap ,mpt <Plug>MarkdownPreviewToggle
 " The following settings were originally added by lambda at Nov.20, 2012.
 " -----------------------------------------------------------------------------
 
-""""""""""""""""""""""""""""""""" For taglist """""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""" For taglist """"""""""""""""""""""""""""""""""
 " let Tlist_Show_One_File=1 
 " let Tlist_Exit_OnlyWindow=1
 " let Tlist_Auto_Open=1
 " nnoremap <silent> <F8> :TlistToggle<CR>
 
-""""""""""""""""""""""""""""""" For winmanager """"""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""" For winmanager """""""""""""""""""""""""""""""""
 " let g:winManagerWindowLayout='FileExplorer|TagList' 
 " let g:winManagerWindowLayout='FileExplorer,BufExplorer|TagList' 
 " let g:winManagerWidth=40
 " nnoremap <silent> <F8> :WMToggle<CR>
 " nmap wm :WMToggle<cr> 
 
-""""""""""""""""""""""""""""""""" For cscope """"""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""" For cscope """""""""""""""""""""""""""""""""""
 " set cscopequickfix=s-,c-,d-,i-,t-,e-
 " nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR> 
 " nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR> 
@@ -309,17 +344,17 @@ nmap ,mpt <Plug>MarkdownPreviewToggle
 " nmap <C-_>i :cs find i <C-R>=expand("<cfile>")<CR><CR>
 " nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
-""""""""""""""""""""""""""""""" For minibuffer """"""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""" For minibuffer """""""""""""""""""""""""""""""""
 " let g:miniBufExplMapCTabSwitchBufs=1 
 " let g:miniBufExplMapWindowNavVim=1
 " let g:miniBufExplMapWindowNavArrows=1
 " let g:miniBufExplorerMoreThanOne=0  " prevent window resize
 
-"""""""""""""""""""""""""""""""""""" For A """"""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""" For A """""""""""""""""""""""""""""""""""""
 " nnoremap <silent> <F12> :A<CR>
 " nnoremap <silent> <F11> :AV<CR>
 
-"""""""""""""""""""""""""""""""" For vimdiff """"""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""" For vimdiff """""""""""""""""""""""""""""""""""
 " See this for colors:
 " http://vim.wikia.com/wiki/Xterm256_color_names_for_console_Vim?file=Xterm-color-table.png
 " hi DiffAdd    cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
@@ -327,5 +362,5 @@ nmap ,mpt <Plug>MarkdownPreviewToggle
 " hi DiffChange cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
 " hi DiffText   cterm=bold ctermfg=10 ctermbg=20 gui=none guifg=bg guibg=Red
 
-"""""""""""""""""""""""""""""""""""" Misc """""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""" Misc """"""""""""""""""""""""""""""""""""""
 " set completeopt=longest,menu  " Auto completion
