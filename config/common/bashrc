@@ -105,10 +105,10 @@ NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
 
 sb() { exec bash; }
 vimbashrc() {
-  vim ~/.bashrc $AAROEY_LIB_DIR/config/common/bashrc
+  vim ~/.bashrc $AAROEY_LIB_DIR/config/common/bashrc "$@"
 }
 vimvimrc() {
-  vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc
+  vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc "$@"
 }
 clearscreen() {
   clear && echo -en "\e[3J"

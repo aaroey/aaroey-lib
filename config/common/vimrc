@@ -1,141 +1,315 @@
-""""""""""""""""""""""""""" Vundle start
+"""""""""""""""""""""""""""""""" For vim-plug """""""""""""""""""""""""""""""""
 set nocompatible              " be iMproved, required
-filetype off                  " required
 
-" Set the runtime path to include Vundle and initialize
-" See https://github.com/VundleVim/Vundle.vim on how to set up Vundle for first
-" the time, usually we need to do:
-" - git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-" - Launch vim and run :PluginInstall
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+        \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif 
 
-" Let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim'
+call plug#begin('~/.vim/bundle')
 
-" Customized plugins. After updates, launch vim and run :PluginInstall
-Plugin 'kien/ctrlp.vim'
-Plugin 'scrooloose/nerdtree'
-Plugin 'techlivezheng/vim-plugin-minibufexpl'
-Plugin 'vim-scripts/a.vim'
-Plugin 'vim-scripts/AnsiEsc.vim'
+" If nodejs and yarn is not installed use this one.
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
+"
+" Otherwise if nodejs and yarn is installed (in mac use brew), do:
+" Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app & yarn install'  }
+"
+" Also see https://github.com/iamcco/markdown-preview.nvim/issues/16
 
-" All of your Plugins must be added before the following line
-call vundle#end()            " required
-filetype plugin indent on    " required
+" https://github.com/lervag/vimtex
+Plug 'lervag/vimtex'
 
-""""""""""""""""""""""""""" Other stuff
-set autochdir " Automatically change the working directory to the current one
+" For code formatting. See https://github.com/google/vim-codefmt
+Plug 'google/vim-maktaba'
+Plug 'google/vim-codefmt'
+Plug 'google/vim-glaive'
+
+" https://github.com/weynhamz/vim-plugin-minibufexpl
+Plug 'techlivezheng/vim-plugin-minibufexpl'
+
+Plug 'scrooloose/nerdtree'
+
+Plug 'kien/ctrlp.vim'
+
+Plug 'vim-scripts/a.vim'
+
+Plug 'vim-scripts/AnsiEsc.vim'
+
+call plug#end()
+
+"""""""""""""""""""""""""""""""" For codefmt """"""""""""""""""""""""""""""""""
+" the glaive#Install() should go after the `call plug#end()`
+call glaive#Install()
+" Optional: Enable codefmt's default mappings on the <Leader>= prefix.
+Glaive codefmt plugin[mappings]
+nnoremap ,fc ::FormatCode<CR>:w<CR>
+
+" Use -style=file to load style configuration from .clang-format file located
+" in one of the parent directories of the source file. Examples:
+" :!clang-format -i -style=file %:p
+" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
+nnoremap ,cl :%!clang-format<CR><CR>
+
+""""""""""""""""""""""""""""""" Basic settings """"""""""""""""""""""""""""""""
+" Automatically change the working directory to the current one
+set autochdir
+" Alternative solution:
+" au BufEnter * silent! lcd %:p:h
+
+set autoindent
 set autoread
-set clipboard=unnamedplus       " Yank to the X window clipboard (Only in Vim 7.3.74+)
-set expandtab                   " Force this again although it may be done before
-set hlsearch                    " Highlight previous search results
-set incsearch                   " Do incremental searching
+
+" Don't use in my mac.
+set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
+" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+
+set expandtab
+" set history=65536
+
+" Highlight previous search results
+set hlsearch
+
+" Do incremental searching
+set incsearch
+
+" For Split screen users: higlight the status line of the active window
+set laststatus=2                " Always display the last status
+
 set matchpairs=(:),{:},[:],<:>
-set number                      " Set line numbers
-set shiftwidth=2                " Force this again although it may be done before
+set nrformats=alpha,octal,hex
+set number
+set shiftwidth=2                " Force this again although it may have been done before
+set showcmd
 set showmatch                   " Show matching braces / brackets
 set showmode                    " Show the mode you're currently in
 set softtabstop=2               " Make tabs act like spaces for editing ops
+set tabstop=2
+set textwidth=80
 set title                       " Let vim change my tab/window title
 set wildmode=longest,list,full  " Completion modes for wildcard expansion
+set colorcolumn=81
+set wildignorecase              " Ignore case for file/dir completion
+set cursorline
 
-" au BufEnter * silent! lcd %:p:h  " old way of autochdir
-" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+" set statusline=%F%m%r%h%w\ \ -\ \ [ASCII]\ \%03.3b\ \ -\ \ [HEX]\ \%02.2B\ \ -\ \ [LEN]\ %L\ \ -\ \ %03l,\ %03v\ \ -\ \ %p%%
+" set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=\%03.3b]\ [HEX=\%02.2B]\ [POS=%04l,%04v]\ [%p%%]\ [LEN=%L]
+set statusline=%F%m%r%h%w\ \ -\ \ [LEN]\ %L\ \ -\ \ %l,\ %v\ \ -\ \ %p%%
 
-""""""""""""""""""""""""""" Clang Format
-" autocmd BufWritePre * :ClangFormat
-" nnoremap <C-K> :ClangFormat<CR>
-" vnoremap <C-K> :ClangFormat<CR>
-" inoremap <C-K> <ESC> :ClangFormat<CR>
+filetype on
+filetype plugin on
+filetype plugin indent on
+filetype indent on
 
-" Use -style=file to load style configuration from .clang-format file located in
-" one of the parent directories of the source file
-" :!clang-format -i -style=file %:p
+syntax enable
+syntax on
 
-" au BufWrite {*.c,*.h,*.cc,*.cpp} :<like-following> " This doesn't work???
-" nnoremap ,cl :!clang-format -i -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}" %:p<CR><CR>
-" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
-" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: true, PointerAlignment: Right, BinPackArguments: true, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
-" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: true, PointerAlignment: Left, BinPackArguments: true, BinPackParameters: true, AllowAllParametersOfDeclarationOnNextLine: false, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
-nnoremap ,cl :%!clang-format<CR><CR>
+" Store/Resume view setting
+au BufWinLeave ?* silent mkview  " '?' stands for any single character
+au BufWinEnter ?* silent loadview
+au BufNewFile,BufFilePre,BufRead *.md set filetype=markdown
 
-""""""""""""""""""""""""""" Forcing vimdiff to wrap lines
+" Forcing vimdiff to wrap lines
 au VimEnter * if &diff | execute 'windo set wrap' | endif
 
-""""""""""""""""""""""""""" Fast switch to different split screens
+colorscheme koehler
+
+" For Split screen users: higlight the status line of the active window
+" This MUST be set after setting colorscheme!!!
+" previous is Cyan
+hi StatusLine ctermfg=yellow ctermbg=blue
+hi StatusLineNC ctermfg=59 ctermbg=145
+
 noremap <C-J> <C-W>j
 noremap <C-K> <C-W>k
 noremap <C-H> <C-W>h
 noremap <C-L> <C-W>l
-" doesn't work???
-" noremap <A-J> <C-W>j
-" noremap <A-K> <C-W>k
-" noremap <A-H> <C-W>h
-" noremap <A-L> <C-W>l
 
-""""""""""""""""""""""""""" Other hotkey
-" Uses Alt in addition to Ctrl
-" doesn't work???
-" noremap <A-F> <C-F>
-" noremap <A-B> <C-B>
-" noremap <A-V> <C-V>
-
+" Use 119 for the nerd tree.
+noremap ,v :86vs<CR><C-L>
+noremap ,r :vertical resize 86<CR>
 noremap ,sp :set paste<CR>
 noremap ,snp :set nopaste<CR>
-noremap ,v :86vs<CR><C-W>l
-noremap ,r :vertical resize 86<CR>
 noremap ,do :diffoff<CR>:set foldcolumn=0<CR>:set nocrb<CR>:set noscb<CR>
+noremap ,ds wbyw:r !date -d@<C-R>0 "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,jc wbi{@code <ESC>ea}<ESC>
+noremap ,dms wbyw:r !date -d@$(echo <C-R>0/1000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,dus wbyw:r !date -d@$(echo <C-R>0/1000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,dns wbyw:r !date -d@$(echo <C-R>0/1000000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+
+"""""""""""""""""""""""""""""" For writing blog """""""""""""""""""""""""""""""
 noremap ,{ wbi{<ESC>ea}<ESC>
 noremap ,[ wbi[<ESC>ea]<ESC>
 noremap ,( wbi(<ESC>ea)<ESC>
 noremap ,< wbi<<ESC>ea><ESC>
 noremap ," wbi"<ESC>ea"<ESC>
 noremap ,' wbi'<ESC>ea'<ESC>
-noremap ,jc wbi{@code <ESC>ea}<ESC>
-noremap ,ds wbyw:r !date -d@<C-R>0 "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
-noremap ,dms wbyw:r !date -d@$(echo <C-R>0/1000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
-noremap ,dus wbyw:r !date -d@$(echo <C-R>0/1000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
-noremap ,dns wbyw:r !date -d@$(echo <C-R>0/1000000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
+noremap ,` wbi`<ESC>ea`<ESC>
+noremap ,l Bi<div class=lambda_question><ESC>Ea</div><ESC>
+noremap ,s i<span style="color: blue"><ESC>
 
-""""""""""""""""""""""""""" Store/Resume view setting
-au BufWinLeave ?* silent mkview  " '?' stands for any single character
-au BufWinEnter ?* silent loadview
+" For mathjax
+noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 
-""""""""""""""""""""""""""" Status line
-" set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=\%03.3b]\ [HEX=\%02.2B]\ [POS=%04l,%04v]\ [%p%%]\ [LEN=%L]
-" set statusline=%F%m%r%h%w\ \ -\ \ [ASCII]\ \%03.3b\ \ -\ \ [HEX]\ \%02.2B\ \ -\ \ [LEN]\ %L\ \ -\ \ %l,\ %v\ \ -\ \ %p%%
-set statusline=%F%m%r%h%w\ \ -\ \ [LEN]\ %L\ \ -\ \ %l,\ %v\ \ -\ \ %p%%
+""""""""""""""""""""""""""""""" For minibufexpl """""""""""""""""""""""""""""""
+hi MBENormal               ctermfg=cyan
+hi MBEChanged              ctermfg=magenta
+" hi MBEVisibleNormal        ctermfg=red
+" hi MBEVisibleChanged       ctermfg=magenta
+" hi MBEVisibleActiveNormal  ctermfg=red cterm=bold
+" hi MBEVisibleActiveChanged ctermfg=magenta
+hi MBEVisibleNormal        ctermfg=red cterm=NONE
+hi MBEVisibleChanged       ctermfg=red cterm=NONE
+hi MBEVisibleActiveNormal  ctermfg=red
+hi MBEVisibleActiveChanged ctermfg=red
 
-""""""""""""""""""""""""""" For nerdtree
+"""""""""""""""""""""""""""""""" For nerdtree """""""""""""""""""""""""""""""""
 " au vimenter * NERDTree
-nnoremap ,ne :NERDTree<CR>
-nnoremap ,nc :NERDTreeClose<CR>
+noremap ,nt :NERDTree<CR>
+noremap ,ntc :NERDTreeClose<CR>
 
-""""""""""""""""""""""""""" Additional basic settings. Order *matters*
-set nrformats=alpha,octal,hex
-set showcmd
-set tabstop=2
-set wildignorecase  " Ignore case for file/dir completion
-set cursorline
-" set history=65536
+"""""""""""""""""""""""""""" For markdown-preview """""""""""""""""""""""""""""
+" https://github.com/iamcco/markdown-preview.nvim
 
-" filetype on
-" filetype plugin on
-" filetype indent on
-" syntax on
+" set to 1, nvim will open the preview window after entering the markdown buffer
+" default: 0
+let g:mkdp_auto_start = 0
 
-colorscheme koehler
-syntax enable
+" set to 1, the nvim will auto close current preview window when change
+" from markdown buffer to another buffer
+" default: 1
+let g:mkdp_auto_close = 1
 
-" For Split screen users: higlight the status line of the active window
-set laststatus=2  " Always display the last status
-" hi StatusLine ctermfg=16 ctermbg=blue
-hi StatusLine ctermfg=yellow ctermbg=blue
-hi StatusLineNC ctermfg=59 ctermbg=145
-set colorcolumn=81
+" set to 1, the vim will refresh markdown when save the buffer or
+" leave from insert mode, default 0 is auto refresh markdown as you edit or
+" move the cursor
+" default: 0
+let g:mkdp_refresh_slow = 0
 
-""""""""""""""""""""""""""" For vimdiff
+" set to 1, the MarkdownPreview command can be use for all files,
+" by default it can be use in markdown file
+" default: 0
+let g:mkdp_command_for_global = 0
+
+" set to 1, preview server available to others in your network
+" by default, the server listens on localhost (127.0.0.1)
+" default: 0
+let g:mkdp_open_to_the_world = 0
+
+" use custom IP to open preview page
+" useful when you work in remote vim and preview on local browser
+" more detail see: https://github.com/iamcco/markdown-preview.nvim/pull/9
+" default empty
+let g:mkdp_open_ip = ''
+
+" specify browser to open preview page
+" default: ''
+let g:mkdp_browser = ''
+
+" set to 1, echo preview page url in command line when open preview page
+" default is 0
+let g:mkdp_echo_preview_url = 0
+
+" a custom vim function name to open preview page
+" this function will receive url as param
+" default is empty
+let g:mkdp_browserfunc = ''
+
+" options for markdown render
+" mkit: markdown-it options for render
+" katex: katex options for math
+" uml: markdown-it-plantuml options
+" maid: mermaid options
+" disable_sync_scroll: if disable sync scroll, default 0
+" sync_scroll_type: 'middle', 'top' or 'relative', default value is 'middle'
+"   middle: mean the cursor position alway show at the middle of the preview page
+"   top: mean the vim top viewport alway show at the top of the preview page
+"   relative: mean the cursor position alway show at the relative positon of the preview page
+" hide_yaml_meta: if hide yaml metadata, default is 1
+let g:mkdp_preview_options = {
+      \'mkit': {},
+      \ 'katex': {},
+      \ 'uml': {},
+      \ 'maid': {},
+      \ 'disable_sync_scroll': 0,
+      \ 'sync_scroll_type': 'middle',
+      \ 'hide_yaml_meta': 1
+      \ }
+
+" use a custom markdown style must be absolute path
+let g:mkdp_markdown_css = ''
+
+" use a custom highlight style must absolute path
+let g:mkdp_highlight_css = ''
+
+" use a custom port to start server or random for empty
+let g:mkdp_port = ''
+
+" preview page title
+" ${name} will be replace with the file name
+let g:mkdp_page_title = '「${name}」'
+
+" normal/insert
+" <Plug>MarkdownPreview
+" <Plug>MarkdownPreviewStop
+" <Plug>MarkdownPreviewToggle
+
+" example
+nmap ,mp <Plug>MarkdownPreview
+nmap ,mps <Plug>MarkdownPreviewStop
+nmap ,mpt <Plug>MarkdownPreviewToggle
+
+""""""""""""""""""""""""""""""""" Other tips """"""""""""""""""""""""""""""""""
+" Examples of how to use <Plug>:
+" nnoremap <Plug>(HelloWorld) :echo "hello world!"<CR>
+" nmap s <Plug>(HelloWorld)
+
+" Check system type:
+" if has('mac')
+"   Plug 'junegunn/vim-xmark'
+" endif
+" See https://github.com/junegunn/vim-plug/wiki/tips#automatic-installation
+
+" -----------------------------------------------------------------------------
+" The following settings were originally added by lambda at Nov.20, 2012.
+" -----------------------------------------------------------------------------
+
+""""""""""""""""""""""""""""""""" For taglist """""""""""""""""""""""""""""""""
+" let Tlist_Show_One_File=1 
+" let Tlist_Exit_OnlyWindow=1
+" let Tlist_Auto_Open=1
+" nnoremap <silent> <F8> :TlistToggle<CR>
+
+""""""""""""""""""""""""""""""" For winmanager """"""""""""""""""""""""""""""""
+" let g:winManagerWindowLayout='FileExplorer|TagList' 
+" let g:winManagerWindowLayout='FileExplorer,BufExplorer|TagList' 
+" let g:winManagerWidth=40
+" nnoremap <silent> <F8> :WMToggle<CR>
+" nmap wm :WMToggle<cr> 
+
+""""""""""""""""""""""""""""""""" For cscope """"""""""""""""""""""""""""""""""
+" set cscopequickfix=s-,c-,d-,i-,t-,e-
+" nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR> 
+" nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR> 
+" nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR> 
+" nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR> 
+" nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR> 
+" nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR> 
+" nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR> 
+" nmap <C-_>i :cs find i <C-R>=expand("<cfile>")<CR><CR>
+" nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+
+""""""""""""""""""""""""""""""" For minibuffer """"""""""""""""""""""""""""""""
+" let g:miniBufExplMapCTabSwitchBufs=1 
+" let g:miniBufExplMapWindowNavVim=1
+" let g:miniBufExplMapWindowNavArrows=1
+" let g:miniBufExplorerMoreThanOne=0  " prevent window resize
+
+"""""""""""""""""""""""""""""""""""" For A """"""""""""""""""""""""""""""""""""
+" nnoremap <silent> <F12> :A<CR>
+" nnoremap <silent> <F11> :AV<CR>
+
+"""""""""""""""""""""""""""""""" For vimdiff """"""""""""""""""""""""""""""""""
 " See this for colors:
 " http://vim.wikia.com/wiki/Xterm256_color_names_for_console_Vim?file=Xterm-color-table.png
 " hi DiffAdd    cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
@@ -143,13 +317,5 @@ set colorcolumn=81
 " hi DiffChange cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=bg guibg=Red
 " hi DiffText   cterm=bold ctermfg=10 ctermbg=20 gui=none guifg=bg guibg=Red
 
-""""""""""""""""""""""""""" For minibufexpl
-hi MBENormal               ctermfg=cyan
-hi MBEChanged              ctermfg=magenta
-hi MBEVisibleNormal        ctermfg=red cterm=NONE
-hi MBEVisibleChanged       ctermfg=red cterm=NONE
-hi MBEVisibleActiveNormal  ctermfg=red
-hi MBEVisibleActiveChanged ctermfg=red
-
-""""""""""""""""""""""""""" Other tips
-" :vs119 for the nerd tree.
+"""""""""""""""""""""""""""""""""""" Misc """""""""""""""""""""""""""""""""""""
+" set completeopt=longest,menu  " Auto completion
