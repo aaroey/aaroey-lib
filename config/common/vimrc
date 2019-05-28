@@ -20,6 +20,10 @@ Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
 " https://github.com/lervag/vimtex
 Plug 'lervag/vimtex'
 
+" This is needed by ultisnips and must be put *BEFORE* ultisnips, not sure why.
+" See https://github.com/SirVer/ultisnips/issues/512#issuecomment-238036845
+Plug 'ervandew/supertab'
+
 " https://github.com/SirVer/ultisnips
 Plug 'SirVer/ultisnips'
 
@@ -64,9 +68,12 @@ set autoindent
 
 set autoread
 
-" Don't use in my mac.
-set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
-" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+if has('mac')
+	set clipboard=
+else
+	set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
+	" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+endif
 
 set expandtab
 " set history=65536
@@ -95,7 +102,7 @@ set wildmode=longest,list,full  " Completion modes for wildcard expansion
 set colorcolumn=81
 set wildignorecase              " Ignore case for file/dir completion
 set cursorline
-set cursorcolumn
+" set cursorcolumn  " Very hard to read.
 
 " hi CursorLine   cterm=NONE ctermbg=darkgray ctermfg=NONE "guibg=lightgrey guifg=white
 " hi CursorColumn cterm=NONE ctermbg=darkgray ctermfg=NONE "guibg=lightgrey guifg=white
@@ -191,7 +198,6 @@ noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 let g:UltiSnipsExpandTrigger = '<tab>'
 let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
-let g:UltiSnipsSnippetDirectories = ['UltiSnips', '~/Workspace/aaroey/aaroey-lib/config/common/ultisnips']
 
 """""""""""""""""""""""""""""""" For minibufexpl """""""""""""""""""""""""""""""
 hi MBENormal               ctermfg=cyan
