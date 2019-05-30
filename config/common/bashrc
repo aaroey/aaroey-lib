@@ -93,6 +93,24 @@ init() {
 init
 
 ##################################### bash #####################################
+
+# Tips
+# - To detect OS type, see:
+#   https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
+#   Example code:
+#   ```
+#   uname_out="$(uname -s)"
+#   case "${uname_out}" in
+#       Linux*)  machine=Linux;;
+#       Darwin*) machine=Mac;;
+#       CYGWIN*) machine=Cygwin;;
+#       MINGW*)  machine=MinGw;;
+#       *)       machine="UNKNOWN:${uname_out}"
+#   esac
+#   echo ${machine}
+#   ```
+# - Try to user python3 to deal with platform dependent features.
+
 # Size of the history file.
 export HISTFILESIZE=10000000
 # Number of commands be printed each time we run 'history' in bash.

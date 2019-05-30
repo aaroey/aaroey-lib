@@ -198,6 +198,8 @@ noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 let g:UltiSnipsExpandTrigger = '<tab>'
 let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
+" Reload Ultisnips. Found by :call <C-d>
+noremap ,ru :call UltiSnips#RefreshSnippets()<CR>
 
 """""""""""""""""""""""""""""""" For minibufexpl """""""""""""""""""""""""""""""
 hi MBENormal               ctermfg=cyan
