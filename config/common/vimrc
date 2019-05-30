@@ -5,7 +5,7 @@ if empty(glob('~/.vim/autoload/plug.vim'))
   silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
         \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
-endif 
+endif
 
 call plug#begin('~/.vim/bundle')
 
@@ -69,7 +69,7 @@ set autoindent
 set autoread
 
 if has('mac')
-	set clipboard=
+  set clipboard=
 else
 	set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
 	" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
@@ -328,32 +328,32 @@ nmap ,mpt <Plug>MarkdownPreviewToggle
 " -----------------------------------------------------------------------------
 
 """"""""""""""""""""""""""""""""" For taglist """"""""""""""""""""""""""""""""""
-" let Tlist_Show_One_File=1 
+" let Tlist_Show_One_File=1
 " let Tlist_Exit_OnlyWindow=1
 " let Tlist_Auto_Open=1
 " nnoremap <silent> <F8> :TlistToggle<CR>
 
 """"""""""""""""""""""""""""""" For winmanager """""""""""""""""""""""""""""""""
-" let g:winManagerWindowLayout='FileExplorer|TagList' 
-" let g:winManagerWindowLayout='FileExplorer,BufExplorer|TagList' 
+" let g:winManagerWindowLayout='FileExplorer|TagList'
+" let g:winManagerWindowLayout='FileExplorer,BufExplorer|TagList'
 " let g:winManagerWidth=40
 " nnoremap <silent> <F8> :WMToggle<CR>
-" nmap wm :WMToggle<cr> 
+" nmap wm :WMToggle<cr>
 
 """"""""""""""""""""""""""""""""" For cscope """""""""""""""""""""""""""""""""""
 " set cscopequickfix=s-,c-,d-,i-,t-,e-
-" nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR> 
-" nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR> 
-" nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR> 
-" nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR> 
-" nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR> 
-" nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR> 
-" nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR> 
+" nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR>
+" nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+" nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+" nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+" nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+" nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+" nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
 " nmap <C-_>i :cs find i <C-R>=expand("<cfile>")<CR><CR>
 " nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
 """"""""""""""""""""""""""""""" For minibuffer """""""""""""""""""""""""""""""""
-" let g:miniBufExplMapCTabSwitchBufs=1 
+" let g:miniBufExplMapCTabSwitchBufs=1
 " let g:miniBufExplMapWindowNavVim=1
 " let g:miniBufExplMapWindowNavArrows=1
 " let g:miniBufExplorerMoreThanOne=0  " prevent window resize
