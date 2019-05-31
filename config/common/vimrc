@@ -71,8 +71,8 @@ set autoread
 if has('mac')
   set clipboard=
 else
-	set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
-	" set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+  set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
+  " set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
 endif
 
 set expandtab
