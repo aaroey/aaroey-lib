@@ -213,9 +213,10 @@ psgp()   { ps -AlF | grep --color "^F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+
 du0()    { du -d 0 -h $@;                           }
 dutop()  { du -a -h "$@" | sort -r -h | head -n 30; }
 
-if [[ "$(type ll | grep 'is aliased to')" ]]; then
-  unalias ll
-fi
+# To detect alias use (just that `type ll` may fail and report error):
+# if [[ "$(type ll | grep 'is aliased to')" ]]; then
+#   unalias ll
+# fi
 ll()     { ls -alhF --color "$@";                   }
 
 llpwd()  { for i in "$@"; do ll -d -1 "$PWD/$i"; done }
