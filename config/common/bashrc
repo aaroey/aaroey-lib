@@ -84,11 +84,16 @@ init_vim() {
     ln -s $AAROEY_LIB_CONFIG_COMMON_DIR/ultisnips ~/.vim/ultisnips
   fi
 }
+init_git() {
+  git config --global alias.co checkout
+  git config --global alias.st status
+}
 init() {
   init_inputrc
   make_docker_root
   export_ps1
   init_vim
+  init_git
 }
 init
 
@@ -430,8 +435,11 @@ gitpushrelogin() {
 new_tmux_session() {
   if [[ $# -ne 20 ]]; then
     echo 'Usage:'
-    echo '  new_tmux_session <win0> <path0> <win1> <path1> ... <win9> <path9>'
-    return
+    echo '  new_tmux_session <win0> [<path0> [<win1> [<path1> ... [<win9> [<path9>]]...]'
+    echo 'The first parameter <win0> is used as the suffix of the session name.'
+    if [[ $# -lt 1 ]]; then
+      return
+    fi
   fi
   local session=mysession-$1
   local anysession=$(tmux ls)
@@ -449,18 +457,18 @@ new_tmux_session() {
     tmpconfig=/tmp/tmux.conf.$1
   fi
 
-  cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl        \
-    | sed "s/<mysession>/$session/g"                        \
-    | sed "s/<window0>/$1/g"    | sed "s#<path0>#$2#g"      \
-    | sed "s/<window1>/$3/g"    | sed "s#<path1>#$4#g"      \
-    | sed "s/<window2>/$5/g"    | sed "s#<path2>#$6#g"      \
-    | sed "s/<window3>/$7/g"    | sed "s#<path3>#$8#g"      \
-    | sed "s/<window4>/$9/g"    | sed "s#<path4>#${10}#g"   \
-    | sed "s/<window5>/${11}/g" | sed "s#<path5>#${12}#g"   \
-    | sed "s/<window6>/${13}/g" | sed "s#<path6>#${14}#g"   \
-    | sed "s/<window7>/${15}/g" | sed "s#<path7>#${16}#g"   \
-    | sed "s/<window8>/${17}/g" | sed "s#<path8>#${18}#g"   \
-    | sed "s/<window9>/${19}/g" | sed "s#<path9>#${20}#g"   \
+  cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl              \
+    | sed "s/<mysession>/$session/g"                              \
+    | sed "s/<window0>/${1:-~}/g"  | sed "s#<path0>#${2:-~}#g"    \
+    | sed "s/<window1>/${3:-~}/g"  | sed "s#<path1>#${4:-~}#g"    \
+    | sed "s/<window2>/${5:-~}/g"  | sed "s#<path2>#${6:-~}#g"    \
+    | sed "s/<window3>/${7:-~}/g"  | sed "s#<path3>#${8:-~}#g"    \
+    | sed "s/<window4>/${9:-~}/g"  | sed "s#<path4>#${10:-~}#g"   \
+    | sed "s/<window5>/${11:-~}/g" | sed "s#<path5>#${12:-~}#g"   \
+    | sed "s/<window6>/${13:-~}/g" | sed "s#<path6>#${14:-~}#g"   \
+    | sed "s/<window7>/${15:-~}/g" | sed "s#<path7>#${16:-~}#g"   \
+    | sed "s/<window8>/${17:-~}/g" | sed "s#<path8>#${18:-~}#g"   \
+    | sed "s/<window9>/${19:-~}/g" | sed "s#<path9>#${20:-~}#g"   \
     > $tmpconfig
   if [[ $anysession ]]; then
     tmux source $tmpconfig
