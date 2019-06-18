@@ -9,13 +9,15 @@ endif
 
 call plug#begin('~/.vim/bundle')
 
-" If nodejs and yarn is not installed use this one.
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
-"
-" Otherwise if nodejs and yarn is installed (in mac use brew), do:
-" Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app & yarn install'  }
-"
-" Also see https://github.com/iamcco/markdown-preview.nvim/issues/16
+if v:version >= 800
+  " If nodejs and yarn is not installed use this one.
+  Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
+  "
+  " Otherwise if nodejs and yarn is installed (in mac use brew), do:
+  " Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app & yarn install'  }
+  "
+  " Also see https://github.com/iamcco/markdown-preview.nvim/issues/16
+endif
 
 " https://github.com/lervag/vimtex
 Plug 'lervag/vimtex'
@@ -28,9 +30,11 @@ Plug 'ervandew/supertab'
 Plug 'SirVer/ultisnips'
 
 " For code formatting. See https://github.com/google/vim-codefmt
-Plug 'google/vim-maktaba'
-Plug 'google/vim-codefmt'
-Plug 'google/vim-glaive'
+if v:version >= 800
+  Plug 'google/vim-maktaba'
+  Plug 'google/vim-codefmt'
+  Plug 'google/vim-glaive'
+endif
 
 " https://github.com/weynhamz/vim-plugin-minibufexpl
 Plug 'techlivezheng/vim-plugin-minibufexpl'
@@ -46,17 +50,19 @@ Plug 'vim-scripts/AnsiEsc.vim'
 call plug#end()
 
 """""""""""""""""""""""""""""""" For codefmt """""""""""""""""""""""""""""""""""
-" the glaive#Install() should go after the `call plug#end()`
-call glaive#Install()
-" Optional: Enable codefmt's default mappings on the <Leader>= prefix.
-Glaive codefmt plugin[mappings]
-nnoremap ,fc ::FormatCode<CR>:w<CR>
+if v:version >= 800
+  " the glaive#Install() should go after the `call plug#end()`
+  call glaive#Install()
+  " Optional: Enable codefmt's default mappings on the <Leader>= prefix.
+  Glaive codefmt plugin[mappings]
+  nnoremap ,fc ::FormatCode<CR>:w<CR>
 
-" Use -style=file to load style configuration from .clang-format file located
-" in one of the parent directories of the source file. Examples:
-" :!clang-format -i -style=file %:p
-" nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
-nnoremap ,cl :%!clang-format<CR><CR>
+  " Use -style=file to load style configuration from .clang-format file located
+  " in one of the parent directories of the source file. Examples:
+  " :!clang-format -i -style=file %:p
+  " nnoremap ,cl :%!clang-format -style="{BasedOnStyle: Google, DerivePointerAlignment: false, PointerAlignment: Left, BinPackArguments: false, BinPackParameters: false, AllowAllParametersOfDeclarationOnNextLine: true, PenaltyBreakBeforeFirstCallParameter: 0}"<CR><CR>
+  nnoremap ,cl :%!clang-format<CR><CR>
+endif
 
 """"""""""""""""""""""""""""""" Basic settings """""""""""""""""""""""""""""""""
 " Automatically change the working directory to the current one
@@ -143,6 +149,7 @@ endfunction
 nnoremap ,dv :call MyDeleteView()<CR>
 
 au BufNewFile,BufFilePre,BufRead *.md set filetype=markdown
+au BufNewFile,BufFilePre,BufRead *.tex set filetype=tex
 
 " Forcing vimdiff to wrap lines
 au VimEnter * if &diff | execute 'windo set wrap' | endif
@@ -219,89 +226,91 @@ noremap ,nt :NERDTree<CR>
 noremap ,ntc :NERDTreeClose<CR>
 
 """"""""""""""""""""""""""""" For markdown-preview """""""""""""""""""""""""""""
-" https://github.com/iamcco/markdown-preview.nvim
+if v:version >= 800
+  " https://github.com/iamcco/markdown-preview.nvim
 
-" set to 1, nvim will open the preview window after entering the markdown buffer
-" default: 0
-let g:mkdp_auto_start = 0
+  " set to 1, nvim will open the preview window after entering the markdown buffer
+  " default: 0
+  let g:mkdp_auto_start = 0
 
-" set to 1, the nvim will auto close current preview window when change
-" from markdown buffer to another buffer
-" default: 1
-let g:mkdp_auto_close = 1
+  " set to 1, the nvim will auto close current preview window when change
+  " from markdown buffer to another buffer
+  " default: 1
+  let g:mkdp_auto_close = 1
 
-" set to 1, the vim will refresh markdown when save the buffer or
-" leave from insert mode, default 0 is auto refresh markdown as you edit or
-" move the cursor
-" default: 0
-let g:mkdp_refresh_slow = 0
+  " set to 1, the vim will refresh markdown when save the buffer or
+  " leave from insert mode, default 0 is auto refresh markdown as you edit or
+  " move the cursor
+  " default: 0
+  let g:mkdp_refresh_slow = 0
 
-" set to 1, the MarkdownPreview command can be use for all files,
-" by default it can be use in markdown file
-" default: 0
-let g:mkdp_command_for_global = 0
+  " set to 1, the MarkdownPreview command can be use for all files,
+  " by default it can be use in markdown file
+  " default: 0
+  let g:mkdp_command_for_global = 0
 
-" set to 1, preview server available to others in your network
-" by default, the server listens on localhost (127.0.0.1)
-" default: 0
-let g:mkdp_open_to_the_world = 0
+  " set to 1, preview server available to others in your network
+  " by default, the server listens on localhost (127.0.0.1)
+  " default: 0
+  let g:mkdp_open_to_the_world = 0
 
-" use custom IP to open preview page
-" useful when you work in remote vim and preview on local browser
-" more detail see: https://github.com/iamcco/markdown-preview.nvim/pull/9
-" default empty
-let g:mkdp_open_ip = ''
+  " use custom IP to open preview page
+  " useful when you work in remote vim and preview on local browser
+  " more detail see: https://github.com/iamcco/markdown-preview.nvim/pull/9
+  " default empty
+  let g:mkdp_open_ip = ''
 
-" specify browser to open preview page
-" default: ''
-let g:mkdp_browser = ''
+  " specify browser to open preview page
+  " default: ''
+  let g:mkdp_browser = ''
 
-" set to 1, echo preview page url in command line when open preview page
-" default is 0
-let g:mkdp_echo_preview_url = 0
+  " set to 1, echo preview page url in command line when open preview page
+  " default is 0
+  let g:mkdp_echo_preview_url = 0
 
-" a custom vim function name to open preview page
-" this function will receive url as param
-" default is empty
-let g:mkdp_browserfunc = ''
+  " a custom vim function name to open preview page
+  " this function will receive url as param
+  " default is empty
+  let g:mkdp_browserfunc = ''
 
-" options for markdown render
-" mkit: markdown-it options for render
-" katex: katex options for math
-" uml: markdown-it-plantuml options
-" maid: mermaid options
-" disable_sync_scroll: if disable sync scroll, default 0
-" sync_scroll_type: 'middle', 'top' or 'relative', default value is 'middle'
-"   middle: mean the cursor position alway show at the middle of the preview page
-"   top: mean the vim top viewport alway show at the top of the preview page
-"   relative: mean the cursor position alway show at the relative positon of the preview page
-" hide_yaml_meta: if hide yaml metadata, default is 1
-let g:mkdp_preview_options = {
-      \'mkit': {},
-      \ 'katex': {},
-      \ 'uml': {},
-      \ 'maid': {},
-      \ 'disable_sync_scroll': 0,
-      \ 'sync_scroll_type': 'middle',
-      \ 'hide_yaml_meta': 1
-      \ }
+  " options for markdown render
+  " mkit: markdown-it options for render
+  " katex: katex options for math
+  " uml: markdown-it-plantuml options
+  " maid: mermaid options
+  " disable_sync_scroll: if disable sync scroll, default 0
+  " sync_scroll_type: 'middle', 'top' or 'relative', default value is 'middle'
+  "   middle: mean the cursor position alway show at the middle of the preview page
+  "   top: mean the vim top viewport alway show at the top of the preview page
+  "   relative: mean the cursor position alway show at the relative positon of the preview page
+  " hide_yaml_meta: if hide yaml metadata, default is 1
+  let g:mkdp_preview_options = {
+        \'mkit': {},
+        \ 'katex': {},
+        \ 'uml': {},
+        \ 'maid': {},
+        \ 'disable_sync_scroll': 0,
+        \ 'sync_scroll_type': 'middle',
+        \ 'hide_yaml_meta': 1
+        \ }
 
-" use a custom markdown style must be absolute path
-let g:mkdp_markdown_css = ''
+  " use a custom markdown style must be absolute path
+  let g:mkdp_markdown_css = ''
 
-" use a custom highlight style must absolute path
-let g:mkdp_highlight_css = ''
+  " use a custom highlight style must absolute path
+  let g:mkdp_highlight_css = ''
 
-" use a custom port to start server or random for empty
-let g:mkdp_port = ''
+  " use a custom port to start server or random for empty
+  let g:mkdp_port = ''
 
-" preview page title
-" ${name} will be replace with the file name
-let g:mkdp_page_title = '「${name}」'
+  " preview page title
+  " ${name} will be replace with the file name
+  let g:mkdp_page_title = '「${name}」'
 
-nmap ,mp <Plug>MarkdownPreview
-nmap ,mps <Plug>MarkdownPreviewStop
-nmap ,mpt <Plug>MarkdownPreviewToggle
+  nmap ,mp <Plug>MarkdownPreview
+  nmap ,mps <Plug>MarkdownPreviewStop
+  nmap ,mpt <Plug>MarkdownPreviewToggle
+endif
 
 """"""""""""""""""""""""""""""""" Other tips """""""""""""""""""""""""""""""""""
 " Examples of how to use <Plug>:

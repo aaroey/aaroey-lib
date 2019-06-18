@@ -207,7 +207,12 @@ lfgp()   {
 psgp()   { ps -AlF | grep --color "^F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD\|$@"; }
 du0()    { du -d 0 -h $@;                           }
 dutop()  { du -a -h "$@" | sort -r -h | head -n 30; }
+
+if [[ "$(type ll | grep 'is aliased to')" ]]; then
+  unalias ll
+fi
 ll()     { ls -alhF --color "$@";                   }
+
 llpwd()  { for i in "$@"; do ll -d -1 "$PWD/$i"; done }
 
 # date
@@ -342,9 +347,9 @@ gitgraph() {
 gitvimmodified() {
   vim $(git st --porcelain | sed -ne 's/^ M //p')
 }
-gitdiffLCA() {
+gitdifflca() {
   if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]] || [[ "$1" == '?' ]]; then
-    echo 'Usage: gitdiffLCA [master, etc] [--name-only, --no-pager, and/or other options]'
+    echo 'Usage: gitdifflca [master, upstream/master, etc] [--name-only, --no-pager, and/or other options]'
     echo 'If it prompts `Not a valid object name upstream:master` we need to do `git fetch upstream` first.'
     return
   fi
@@ -444,7 +449,7 @@ new_tmux_session() {
     tmpconfig=/tmp/tmux.conf.$1
   fi
 
-  cat $AAROEY_LIB_CONFIG_COMMON_DIR/.tmux_config_tmpl        \
+  cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl        \
     | sed "s/<mysession>/$session/g"                        \
     | sed "s/<window0>/$1/g"    | sed "s#<path0>#$2#g"      \
     | sed "s/<window1>/$3/g"    | sed "s#<path1>#$4#g"      \
