@@ -1,0 +1,53 @@
+snippet ,stal "standalone document class algorithm specification" i
+\documentclass[varwidth]{standalone}
+
+% Use \usepackage[noend]{algpseudocode} if you don't want the ending clause.
+\usepackage{algpseudocode}
+
+\begin{document}
+
+\begin{algorithmic}[1] % The number tells where the line numbering should start
+  \Procedure{$${1:MyAlgorithm}$}{$${2:MyParameters}$}
+  $0
+  \EndProcedure
+\end{algorithmic}
+
+\end{document}
+endsnippet
+
+snippet ,// "comment inside an algorithm" i
+\Comment{$1}
+endsnippet
+
+snippet ,if "if statement inside an algorithm" i
+\If{$$1$}
+  \State $$2$
+\ElsIf{$$3$}
+  \State $$4$
+\Else
+  \State $$5$
+\EndIf
+$0
+endsnippet
+
+snippet ,while "while loop inside an algorithm" i
+\While{$$1$}
+  \State $$2$
+\EndWhile
+$0
+endsnippet
+
+snippet ,s "statement inside an algorithm" i
+\State $$1$
+$0
+endsnippet
+
+snippet ,as "assignment inside an algorithm" i
+\State $$1 \gets $2$
+$0
+endsnippet
+
+snippet ,ne "not equal to" i
+\not=
+endsnippet
+

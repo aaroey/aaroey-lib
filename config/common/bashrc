@@ -144,7 +144,7 @@ findfileslargerthan() {
 
   echo "Writing largest file info output to $largest_fileinfo_output ..."
   (while IFS= read -r i; do ls -alh -color "$i"; done) < $filename_output > $largest_fileinfo_output
-  head -n 20 $largest_fileinfo_output
+  head -n ${3:-20} $largest_fileinfo_output
 }
 # We can add option -l to grep to show only filename instead of matched content
 fgpdir() {
@@ -653,7 +653,7 @@ virtualenv_deactivate() {
   # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  local usage='Usage: vadtmpl nightly|<empty> py2|py3 <workspace>'
+  local usage='Usage: vadtmpl nightly|nightlyv2|mytfpy3|mytf2py3|cpu|<empty> py2|py3 <workspace>'
   if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]; then
     echo $usage
     return
@@ -675,7 +675,9 @@ vadtmpl() {
   local dir=$HOME/tmp
   local veworkspace=$dir/default_virtualenv_workspace
   local tfpkg=''
-  if [[ "$tag" == 'nightly' ]]; then
+	if [[ "$tag" == 'cpu' ]]; then
+		tfpkg='tensorflow'
+  elif [[ "$tag" == 'nightly' ]]; then
     tfpkg='tf-nightly-gpu'
   elif [[ "$tag" == 'nightlyv2' ]]; then
     tfpkg='tf-nightly-gpu-2.0-preview'   # See https://pypi.org/project/tf-nightly-gpu-2.0-preview/#history
@@ -712,8 +714,12 @@ vadnightly()   { vadtmpl nightly py3 "$@";   }
 vadnightlyv2() { vadtmpl nightlyv2 py3 "$@"; }
 vadmytfpy()    { vadtmpl mytfpy3 py3 "$@";   }
 vadmytf2py()   { vadtmpl mytf2py3 py3 "$@";  }
+vadcpu()       { vadtmpl cpu py3 "$@";       }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
+
+#################################### python ####################################
+ipython() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
 
 ##################################### misc #####################################
 

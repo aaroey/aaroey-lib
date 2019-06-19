@@ -181,6 +181,7 @@ noremap ,dus wbyw:r !date -d@$(echo <C-R>0/1000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:
 noremap ,dns wbyw:r !date -d@$(echo <C-R>0/1000000000 \| bc) "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
 
 """""""""""""""""""""""""""""" For writing blog """"""""""""""""""""""""""""""""
+" For mathjax
 noremap ,{ wbi{<ESC>ea}<ESC>
 noremap ,[ wbi[<ESC>ea]<ESC>
 noremap ,( wbi(<ESC>ea)<ESC>
@@ -188,16 +189,21 @@ noremap ,< wbi<<ESC>ea><ESC>
 noremap ," wbi"<ESC>ea"<ESC>
 noremap ,' wbi'<ESC>ea'<ESC>
 noremap ,` wbi`<ESC>ea`<ESC>
-noremap ,l Bi<div class=lambda_question><ESC>Ea</div><ESC>
-noremap ,s i<span style="color: blue"><ESC>
-
-" For mathjax
 noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 
+" For latex
+function ConvertTexToPng()
+	let fpath = expand('%:p')
+	let pdf = substitute(fpath, '.tex', '.pdf', '')
+	let png = substitute(fpath, '.tex', '.png', '')
+	exe '!convert -density 300' pdf '-quality 90' png
+endfunction
+noremap ,2p :exe ConvertTexToPng()<CR>
+
 """"""""""""""""""""""""""""""""" For vimtex """""""""""""""""""""""""""""""""""
-" let g:tex_flavor='latex'
-" let g:vimtex_view_method='zathura'
-" let g:vimtex_quickfix_mode=0
+let g:tex_flavor='latex'
+let g:vimtex_view_method='zathura'
+let g:vimtex_quickfix_mode=0
 " set conceallevel=1
 " let g:tex_conceal='abdmg'
 
