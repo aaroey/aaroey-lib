@@ -184,3 +184,12 @@ snippet _ "subscript" i
 _{$1}$0
 endsnippet
 
+snippet ,img "insert image" i
+![$1]({{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`)
+endsnippet
+
+# Breaking <img ...> into multiple lines won't work.
+snippet ,imgl "insert image aligned on the left" i
+<img src="{{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`" alt="$1" style="margin: 4px">
+endsnippet
+

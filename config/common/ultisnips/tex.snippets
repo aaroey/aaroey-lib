@@ -1,8 +1,18 @@
-snippet ,stal "standalone document class algorithm specification" i
-\documentclass[varwidth]{standalone}
+snippet ,stal "algorithm specification with document class 'standalone'" i
+% See https://tex.stackexchange.com/questions/94391/standalone-varwidth-option-limits-output-width
+\documentclass[varwidth=\maxdimen]{standalone}
+
+\usepackage{url}
+\usepackage{fontspec,xltxtra,xunicode}
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont{Songti SC} % 设置中文字体。如果设为非宋体，也会影响英文字体。
+\XeTeXlinebreaklocale "zh"
+% \XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt %文章内中文自动换行，可以自行调节
 
 % Use \usepackage[noend]{algpseudocode} if you don't want the ending clause.
 \usepackage{algpseudocode}
+\algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
+\newcommand{\LeftComment}[1]{$\quad\triangleright$ #1}
 
 \begin{document}
 
@@ -15,8 +25,12 @@ snippet ,stal "standalone document class algorithm specification" i
 \end{document}
 endsnippet
 
-snippet ,// "comment inside an algorithm" i
-\Comment{$1}
+snippet ,// "comment inside an algorithm" b
+\LineComment{$1}
+endsnippet
+
+snippet ,/ "comment inside an algorithm" i
+\LeftComment{$1}
 endsnippet
 
 snippet ,if "if statement inside an algorithm" i
@@ -51,3 +65,6 @@ snippet ,ne "not equal to" i
 \not=
 endsnippet
 
+snippet ,m "inline math" i
+$${1:${VISUAL}}$
+endsnippet

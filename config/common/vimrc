@@ -145,11 +145,11 @@ function! MyDeleteView()
   echo "Deleted: ".path
 endfunction
 
-" # Command Delview (and it's abbreviation 'delview')
+" This is not enough: when closing the window `mkview` will restore everything!
+" TODO(laigd): fix that!
 nnoremap ,dv :call MyDeleteView()<CR>
 
 au BufNewFile,BufFilePre,BufRead *.md set filetype=markdown
-au BufNewFile,BufFilePre,BufRead *.tex set filetype=tex
 
 " Forcing vimdiff to wrap lines
 au VimEnter * if &diff | execute 'windo set wrap' | endif
@@ -191,21 +191,54 @@ noremap ,' wbi'<ESC>ea'<ESC>
 noremap ,` wbi`<ESC>ea`<ESC>
 noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 
+" let mapleader=','  " Will probably conflict with the noremaps above.
+
 " For latex
 function ConvertTexToPng()
 	let fpath = expand('%:p')
 	let pdf = substitute(fpath, '.tex', '.pdf', '')
 	let png = substitute(fpath, '.tex', '.png', '')
-	exe '!convert -density 300' pdf '-quality 90' png
+	exe '!convert -density 110' pdf '-quality 10' png
 endfunction
 noremap ,2p :exe ConvertTexToPng()<CR>
 
 """"""""""""""""""""""""""""""""" For vimtex """""""""""""""""""""""""""""""""""
+
 let g:tex_flavor='latex'
 let g:vimtex_view_method='zathura'
 let g:vimtex_quickfix_mode=0
 " set conceallevel=1
 " let g:tex_conceal='abdmg'
+
+" Default for '_' is '-pdf' which is not compatible with fontspec package and
+" Chinese fonts.
+let g:vimtex_compiler_latexmk_engines = {
+    \ '_'                : '-xelatex',
+    \ 'pdflatex'         : '-pdf',
+    \ 'dvipdfex'         : '-pdfdvi',
+    \ 'lualatex'         : '-lualatex',
+    \ 'xelatex'          : '-xelatex',
+    \ 'context (pdftex)' : '-pdf -pdflatex=texexec',
+    \ 'context (luatex)' : '-pdf -pdflatex=context',
+    \ 'context (xetex)'  : '-pdf -pdflatex=''texexec --xtx''',
+    \}
+
+function! TexEnterEntered()
+	let cur_line = getline('.')
+	let cur_pos = getpos('.')[2]
+	if cur_line =~ '^\s*\\LineComment{.*$'
+		" For Chinese characters need to -1
+		return "}\<CR>\\LineComment{"
+	else
+		return "\<CR>"
+	endif
+endfunction
+
+" This needs to be set before it sets the filetype using the `au` cmd below.
+au FileType tex inoremap <expr> <CR> TexEnterEntered()
+au FileType tex setlocal indentexpr=
+
+au BufNewFile,BufFilePre,BufRead *.tex set filetype=tex
 
 """""""""""""""""""""""""""""""" For UltiSnips """""""""""""""""""""""""""""""""
 let g:UltiSnipsExpandTrigger = '<tab>'
