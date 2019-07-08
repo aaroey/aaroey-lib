@@ -16,12 +16,13 @@ snippet ,stal "algorithm specification with document class 'standalone'" i
 \newcommand{\LeftComment}[1]{$\quad\triangleright$ #1}
 % To define a new start/end structure:
 % \algdef{SE}{PreLoop}{EndPreLoop}[1]{\textbf{preloop} \(\mbox{#1}\) \textbf{do}}{\textbf{end}}%
+\algdef{SE}{LoopForever}{EndLoopForever}{\textbf{loop forever}}{\textbf{end}}%
 
 \begin{document}
 
 \begin{algorithmic}[1] % The number tells where the line numbering should start
   \Function{$${1:MyAlgorithm}$}{$${2: }$}
-  $0
+    $0
   \EndFunction
 \end{algorithmic}
 
@@ -76,12 +77,18 @@ snippet ,foreach "foreach inside an algorithm" i
 \EndFor
 endsnippet
 
+snippet ,loop "loop inside an algorithm" i
+\LoopForever
+  $1
+\EndLoopForever
+endsnippet
+
 snippet ,return "return statement inside an algorithm" i
 \StateReturn $$1$
 endsnippet
 
 snippet ,break "break statement inside an algorithm" i
-\Break
+\State \textbf{break}
 endsnippet
 
 snippet ,s "statement inside an algorithm" i
@@ -120,6 +127,14 @@ snippet ,B "Beta" i
 \Beta
 endsnippet
 
+snippet ,d "delta" i
+\delta
+endsnippet
+
+snippet ,D "Delta" i
+\Delta
+endsnippet
+
 snippet ,e "epsilon" i
 \epsilon
 endsnippet
@@ -128,12 +143,22 @@ snippet ,E "Epsilon" i
 \Epsilon
 endsnippet
 
-snippet ,s "sigma" i
-snippet ,s "sigma" i
-\sigma
-endsnippet
+# snippet ,s "sigma" i
+# \sigma
+# endsnippet
 
 snippet ,S "Sigma" i
 \Sigma
 endsnippet
 
+snippet ,g "Sigma" i
+\gamma
+endsnippet
+
+snippet ,G "Sigma" i
+\Gamma
+endsnippet
+
+snippet ,lr{ "{}" i
+\\{$1\\}
+endsnippet

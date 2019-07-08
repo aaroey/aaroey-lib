@@ -138,8 +138,8 @@ findfileslargerthan() {
   local filename_output=$(mktemp /tmp/XXXXXX)
   local largest_fileinfo_output=$(mktemp /tmp/XXXXXX)
 
+  echo 'Finding the first $3 files inside directory $1 which are larger than $2 and sort them by size ...'
   echo "Writing large file names output to $filename_output ..."
-  # Find files larger than $2 and sort them by size
   find "${1:-$HOME}" -type f -size +"${2:-50M}" -ls | sort -nr -k 7,7 | sed 's/^[^/]*//' > $filename_output
 
   echo "Writing largest file info output to $largest_fileinfo_output ..."
@@ -460,16 +460,16 @@ new_tmux_session() {
 
   cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl              \
     | sed "s/<mysession>/$session/g"                              \
-    | sed "s/<window0>/${1:-~}/g"  | sed "s#<path0>#${2:-~}#g"    \
-    | sed "s/<window1>/${3:-~}/g"  | sed "s#<path1>#${4:-~}#g"    \
-    | sed "s/<window2>/${5:-~}/g"  | sed "s#<path2>#${6:-~}#g"    \
-    | sed "s/<window3>/${7:-~}/g"  | sed "s#<path3>#${8:-~}#g"    \
-    | sed "s/<window4>/${9:-~}/g"  | sed "s#<path4>#${10:-~}#g"   \
-    | sed "s/<window5>/${11:-~}/g" | sed "s#<path5>#${12:-~}#g"   \
-    | sed "s/<window6>/${13:-~}/g" | sed "s#<path6>#${14:-~}#g"   \
-    | sed "s/<window7>/${15:-~}/g" | sed "s#<path7>#${16:-~}#g"   \
-    | sed "s/<window8>/${17:-~}/g" | sed "s#<path8>#${18:-~}#g"   \
-    | sed "s/<window9>/${19:-~}/g" | sed "s#<path9>#${20:-~}#g"   \
+    | sed "s/<window0>/${1:-$USER}/g"  | sed "s#<path0>#${2:-~}#g"    \
+    | sed "s/<window1>/${3:-$USER}/g"  | sed "s#<path1>#${4:-~}#g"    \
+    | sed "s/<window2>/${5:-$USER}/g"  | sed "s#<path2>#${6:-~}#g"    \
+    | sed "s/<window3>/${7:-$USER}/g"  | sed "s#<path3>#${8:-~}#g"    \
+    | sed "s/<window4>/${9:-$USER}/g"  | sed "s#<path4>#${10:-~}#g"   \
+    | sed "s/<window5>/${11:-$USER}/g" | sed "s#<path5>#${12:-~}#g"   \
+    | sed "s/<window6>/${13:-$USER}/g" | sed "s#<path6>#${14:-~}#g"   \
+    | sed "s/<window7>/${15:-$USER}/g" | sed "s#<path7>#${16:-~}#g"   \
+    | sed "s/<window8>/${17:-$USER}/g" | sed "s#<path8>#${18:-~}#g"   \
+    | sed "s/<window9>/${19:-$USER}/g" | sed "s#<path9>#${20:-~}#g"   \
     > $tmpconfig
   if [[ $anysession ]]; then
     tmux source $tmpconfig
