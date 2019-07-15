@@ -195,10 +195,10 @@ noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 
 " For latex
 function ConvertTexToPng()
-	let fpath = expand('%:p')
-	let pdf = substitute(fpath, '.tex', '.pdf', '')
-	let png = substitute(fpath, '.tex', '.png', '')
-	exe '!convert -density 110' pdf '-quality 10' png
+  let fpath = expand('%:p')
+  let pdf = substitute(fpath, '.tex', '.pdf', '')
+  let png = substitute(fpath, '.tex', '.png', '')
+  exe '!convert -density 110' pdf '-quality 10' png
 endfunction
 noremap ,2p :exe ConvertTexToPng()<CR>
 
@@ -224,14 +224,14 @@ let g:vimtex_compiler_latexmk_engines = {
     \}
 
 function! TexEnterEntered()
-	let cur_line = getline('.')
-	let cur_pos = getpos('.')[2]
-	if cur_line =~ '^\s*\\LineComment{.*$'
-		" For Chinese characters need to -1
-		return "}\<CR>\\LineComment{"
-	else
-		return "\<CR>"
-	endif
+  let cur_line = getline('.')
+  let cur_pos = getpos('.')[2]
+  if cur_line =~ '^\s*\\LineComment{.*$'
+    " For Chinese characters need to -1
+    return "}\<CR>\\LineComment{"
+  else
+    return "\<CR>"
+  endif
 endfunction
 
 " This needs to be set before it sets the filetype using the `au` cmd below.
