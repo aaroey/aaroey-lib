@@ -57,7 +57,6 @@ snippet ,dm "display math" i
 $$
 ${1:${VISUAL}}
 $$
-$0
 endsnippet
 
 snippet ,m "inline math" i
@@ -84,8 +83,20 @@ snippet ,b "beta" i
 \beta
 endsnippet
 
+snippet ,del "delta" i
+\delta
+endsnippet
+
+snippet ,D "Delta" i
+\Delta
+endsnippet
+
 snippet ,e "epsilon" i
 \epsilon
+endsnippet
+
+snippet ,g "gamma" i
+\gamma
 endsnippet
 
 snippet ,s "sigma" i
@@ -100,6 +111,26 @@ snippet ,ecl "epsilon-closure" i
 $$\epsilon{-}closure$$
 endsnippet
 
+snippet \{ "\{\}" iA
+\\{$1\\}
+endsnippet
+
+snippet ( "()" iA
+($1)
+endsnippet
+
+snippet [ "[]" iA
+[$1]
+endsnippet
+
+snippet | "||" iA
+\vert $1 \vert
+endsnippet
+
+snippet ... "..." iA
+\cdots
+endsnippet
+
 snippet ,lr{ "left{\right}" i
 \left\\{
   $1
@@ -108,7 +139,9 @@ endsnippet
 
 snippet ,l{ "left{" i
 \left\\{
+\begin{array}{l}
   $1
+\end{array}
 \right.
 endsnippet
 
@@ -117,7 +150,15 @@ snippet ,lr< "left<\right>" i
 endsnippet
 
 snippet ,sum "sum" i
-\sum_{${1}}^{${2:\infty}} $0
+\sum_{${1}}^{${2:n}}
+endsnippet
+
+snippet ,prod "prod" i
+\prod_{${1}}^{${2:n}}
+endsnippet
+
+snippet ,int "integral" i
+\int_{$1}^{$2}
 endsnippet
 
 snippet ,lim "limit" i
@@ -128,55 +169,83 @@ snippet ,d "derivative operator" i
 \mathrm{d}
 endsnippet
 
-snippet ,pd "partial derivative operator" i
+snippet ,dx "dx" i
+\mathrm{d}x
+endsnippet
+
+snippet ,dy "dy" i
+\mathrm{d}y
+endsnippet
+
+snippet ,dz "dz" i
+\mathrm{d}z
+endsnippet
+
+snippet ,p "partial derivative operator" i
 \partial
 endsnippet
 
-snippet ,pt "d/dx" i
+snippet ,p/ "d/dx" i
 \frac{\partial ${1}}{\partial ${2:x}}$0
 endsnippet
 
-snippet ,xn "xn" i
-x_{n}
+snippet ,x "x" i
+x_{$1}
 endsnippet
 
-snippet ,yn "yn" i
-y_{n}
+snippet ,y "y" i
+y_{$1}
 endsnippet
 
-snippet ,xi "xi" i
-x_{i}
+snippet ,z "z" i
+z_{$1}
 endsnippet
 
-snippet ,yi "yi" i
-y_{i}
+snippet ,xy "(x,y)" i
+(x$1,y$1)
 endsnippet
 
-snippet ,xj "xj" i
-x_{j}
+snippet ,xyz "(x,y,z)" i
+(x$1,y$1,z$1)
 endsnippet
 
-snippet ,yj "yj" i
-y_{j}
+snippet ,fxy "f(x,y)" i
+f(x$1,y$1)
 endsnippet
 
-snippet -> "right arrow" i
+snippet ,fxyz "f(x,y,z)" i
+f(x$1,y$1,z$1)
+endsnippet
+
+snippet ,> "right arrow" i
 \to
 endsnippet
 
-snippet <- "left arrow" i
+snippet ,< "left arrow" i
 \leftarrow
 endsnippet
 
-snippet => "implies" i
+snippet ,ol "over line" i
+\overline{$1}
+endsnippet
+
+snippet ,o> "over right arrow" i
+\overrightarrow{$1}
+endsnippet
+
+snippet ,o< "over left arrow" i
+\overleftarrow{$1}
+endsnippet
+
+snippet ,>> "implies" i
 \implies $0
 endsnippet
 
-snippet <= "implied by" i
+snippet ,<< "implied by" i
 \impliedby $0
 endsnippet
 
-snippet / "fraction" i
+snippet ,/ "fraction" i
 \frac{$1}{$2}$0
 endsnippet
 
