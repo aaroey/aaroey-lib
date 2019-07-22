@@ -675,8 +675,8 @@ vadtmpl() {
   local dir=$HOME/tmp
   local veworkspace=$dir/default_virtualenv_workspace
   local tfpkg=''
-	if [[ "$tag" == 'cpu' ]]; then
-		tfpkg='tensorflow'
+  if [[ "$tag" == 'cpu' ]]; then
+    tfpkg='tensorflow'
   elif [[ "$tag" == 'nightly' ]]; then
     tfpkg='tf-nightly-gpu'
   elif [[ "$tag" == 'nightlyv2' ]]; then
