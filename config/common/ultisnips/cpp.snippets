@@ -1,11 +1,11 @@
-snippet ,main "main function" A
+snippet ,main "main function" bA
 int main(int argc, const char *argv[]) {
-  ${1}
+  $1
   return 0;
 }
 endsnippet
 
-snippet ,test "Script for quick testing" A
+snippet ,test "Script for quick testing" bA
 #include <cstdio>
 
 #include <algorithm>
@@ -16,7 +16,62 @@ using std::cout;
 using std::endl;
 
 int main(int argc, const char *argv[]) {
-  ${1}
+  $1
   return 0;
 }
+endsnippet
+
+snippet "if "  "if statement" brA
+if ($1) {
+  $2
+}
+endsnippet
+
+snippet "for " "for statement" brA
+for ($1) {
+  $2
+}
+endsnippet
+
+snippet vlog "VLOG" bA
+VLOG(${1:1}) << 
+endsnippet
+
+snippet log "LOG" bA
+LOG(${1:ERROR}) << 
+endsnippet
+
+snippet dlog "LOG" bA
+LOG(WARNING) << "------------------------> " << 
+endsnippet
+
+snippet "class " "class" brA
+class $1 {
+ public:
+  $2
+};
+endsnippet
+
+snippet todo "TODO" bA
+// TODO(laigd): 
+endsnippet
+
+snippet inc "#include" bA
+#include 
+endsnippet
+
+snippet ,v "std::vector" i
+std::vector<$1> 
+endsnippet
+
+snippet ,m "std::map" i
+std::map<$1> 
+endsnippet
+
+snippet ,up "std::unique_ptr" i
+std::unique_ptr<$1> 
+endsnippet
+
+snippet ,um "std::unordered_map" i
+std::unordered_map<$1> 
 endsnippet

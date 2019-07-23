@@ -194,7 +194,7 @@ noremap ,$ wbi\\(<ESC>ea\\)<ESC>
 " let mapleader=','  " Will probably conflict with the noremaps above.
 
 " For latex
-function ConvertTexToPng()
+function! ConvertTexToPng()
   let fpath = expand('%:p')
   let pdf = substitute(fpath, '.tex', '.pdf', '')
   let png = substitute(fpath, '.tex', '.png', '')
@@ -244,7 +244,7 @@ au BufNewFile,BufFilePre,BufRead *.tex set filetype=tex
 let g:UltiSnipsExpandTrigger = '<tab>'
 let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
-let g:UltiSnipsSnippetDirectories = [$HOME.'/.vim/ultisnips', 'UltiSnips']
+let g:UltiSnipsSnippetDirectories = ['ultisnips', 'UltiSnips']
 " Reload Ultisnips. Found by :call <C-d>
 noremap ,ru :call UltiSnips#RefreshSnippets()<CR>
 
