@@ -81,6 +81,7 @@ init_vim() {
   local source_oss_vim_cmd='source ~/Workspace/aaroey/aaroey-lib/config/common/vimrc'
   if ! [[ -f $HOME/.vimrc ]] || ! [[ $(grep "$source_oss_vim_cmd" $HOME/.vimrc) ]]; then
     echo "$source_oss_vim_cmd" >> $HOME/.vimrc
+    mkdir -p ~/.vim
     ln -s $AAROEY_LIB_CONFIG_COMMON_DIR/ultisnips ~/.vim/ultisnips
   fi
 }
