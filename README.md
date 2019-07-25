@@ -3,8 +3,8 @@ My personal library
 
 ## Usage:
 
-1. mkdir -p $HOME/Workspace/aaroey
-1. copy & paste the content in docker/root/.bashrc to your ~/.bashrc
+1. `mkdir -p $HOME/Workspace/aaroey`
+1. copy & paste the content in `docker/root/.bashrc` to your `~/.bashrc`
 
 For mac, to update to newest bash, do:
 
