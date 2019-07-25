@@ -5,7 +5,7 @@
 # For mac, to update to newest bash, do:
 # $ brew update && brew install bash
 # $ sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'
-# $ chsh -s /usr/local/bin/bash 
+# $ chsh -s /usr/local/bin/bash
 # Then restart all the terminals.
 
 ################################# Init scripts #################################
@@ -323,6 +323,7 @@ set -o vi
 export -f sb fgp fgp1 lgp lgp1 psgp du0 ll datelocal datesecond datems dateus datens datetotmpl datetoseconds datetoms datetous datetons datefromtmpl datefromseconds datefromms datefromus datefromns base8to10 base16to10 baseto10 basefrom10 lddclean
 
 ##################################### git ######################################
+gd() { git diff "$@"; }
 gitdiffeditable() {
   if [[ $# -ne 2 ]]; then
     echo 'Usage: gitdiffeditable version file'

@@ -202,6 +202,10 @@ function! ConvertTexToPng()
 endfunction
 noremap ,2p :exe ConvertTexToPng()<CR>
 
+""""""""""""""""""""""""""""""""" For ctrlp """"""""""""""""""""""""""""""""""""
+
+let g:ctrlp_clear_cache_on_exit = 0
+
 """"""""""""""""""""""""""""""""" For vimtex """""""""""""""""""""""""""""""""""
 
 let g:tex_flavor='latex'
