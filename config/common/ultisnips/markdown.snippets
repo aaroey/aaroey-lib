@@ -4,7 +4,7 @@
 # See http://www.onemathematicalcat.org/MathJaxDocumentation/TeXSyntax.htm for
 # valid math symbols in mathjax
 
-snippet ,ib "initialize the blogpost with template"
+snippet ,init "initialize the blogpost with template"
 ---
 layout: post
 title: $1
@@ -122,6 +122,11 @@ endsnippet
 snippet [ "[]" iA
 [$1]
 endsnippet
+
+# Conflicts with \{
+# snippet { "{}" iA
+# {$1}
+# endsnippet
 
 snippet | "||" iA
 \vert $1 \vert
@@ -266,3 +271,62 @@ snippet ,imgl "insert image aligned on the left" i
 <img src="{{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`" alt="$1" style="margin: 4px; max-width: 5500px">
 endsnippet
 
+snippet ,tbf "bold texts" i
+\textbf{$1}
+endsnippet
+
+snippet ,mbf "bold math symbol" i
+\mathbf{$1}
+endsnippet
+
+snippet ,mcal "\mathcal{}" i
+\mathcal{$1}
+endsnippet
+
+snippet ,mbb "\mathbb{}" i
+\mathbb{$1}
+endsnippet
+
+snippet ,mfrak "\mathfrak{}" i
+\mathfrak{$1}
+endsnippet
+
+snippet ,mscr "\mathscr{}" i
+\mathscr{$1}
+endsnippet
+
+snippet ,msf "\mathsf{}" i
+\mathsf{$1}
+endsnippet
+
+snippet ,mtt "\mathtt{}" i
+\mathtt{$1}
+endsnippet
+
+snippet ,va "\mathbf{a}" i
+\mathbf{a}
+endsnippet
+
+snippet ,vb "\mathbf{b}" i
+\mathbf{b}
+endsnippet
+
+snippet ,vc "\mathbf{c}" i
+\mathbf{c}
+endsnippet
+
+snippet ,vv "\mathbf{v}" i
+\mathbf{v}
+endsnippet
+
+snippet ,vx "\mathbf{x}" i
+\mathbf{x}
+endsnippet
+
+snippet ,vy "\mathbf{y}" i
+\mathbf{y}
+endsnippet
+
+snippet ,vz "\mathbf{z}" i
+\mathbf{z}
+endsnippet
