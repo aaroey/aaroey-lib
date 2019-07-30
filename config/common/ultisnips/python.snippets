@@ -13,3 +13,173 @@ endsnippet
 snippet todo "TODO" bA
 # TODO(laigd): 
 endsnippet
+
+snippet ,inp "import numpy" bA
+import numpy as np
+endsnippet
+
+snippet ,itf "import tensorflow" bA
+import tensorflow as tf
+endsnippet
+
+snippet ,itrt "import trt_convert" bA
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+endsnippet
+
+snippet ,trtossexamplev1 "TF-TRT conversion example for open-source for TF v1.x" b
+from PIL import Image
+import io
+import requests
+import tempfile
+import numpy as np
+import tensorflow as tf
+from tensorflow.core.framework import types_pb2
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+from tensorflow.python.saved_model import loader
+from tensorflow.python.saved_model import loader_impl
+from tensorflow.python.saved_model import signature_constants
+from tensorflow.python.saved_model import tag_constants
+
+_DEFAULT_INPUT_ALTERNATIVE_FORMAT = 'default_input_alternative:{}'
+
+
+def _get_meta_graph_def(saved_model_dir, tags=None):
+  saved_model_proto = loader_impl.parse_saved_model(saved_model_dir)
+  tags = tags or tag_constants.SERVING
+  set_of_tags = set([tag.strip() for tag in tags.split(',')])
+  for meta_graph_def in saved_model_proto.meta_graphs:
+    if set(meta_graph_def.meta_info_def.tags) == set_of_tags:
+      return meta_graph_def
+  raise ValueError('Could not find MetaGraphDef with tags {}'.format(tags))
+
+
+def _get_signature_def(saved_model_dir, signature_def_key=None, tags=None):
+  signature_def_key = (
+      signature_def_key or
+      signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
+  metagraph_def = _get_meta_graph_def(saved_model_dir, tags)
+
+  try:
+    signature_def = metagraph_def.signature_def[signature_def_key]
+  except KeyError as e:
+    formatted_key = _DEFAULT_INPUT_ALTERNATIVE_FORMAT.format(signature_def_key)
+    try:
+      signature_def = metagraph_def.signature_def[formatted_key]
+    except KeyError:
+      raise ValueError(
+          'Got signature_def_key "{}". Available signatures are {}. '
+          'Original error:\n{}'.format(signature_def_key,
+                                       list(metagraph_def.signature_def), e))
+    logging.warning('Could not find signature def "%s". '
+                    'Using "%s" instead', signature_def_key, formatted_key)
+  return signature_def
+
+
+def _get_saved_model_feeds_and_fetches(saved_model_dir,
+                                       tags=None,
+                                       signature_def_key=None):
+  signature_def = _get_signature_def(saved_model_dir, signature_def_key, tags)
+  return dict(signature_def.inputs), dict(signature_def.outputs)
+
+
+def _get_feed_dict_and_fetches(saved_model_dir, tags=None):
+  inputs, outputs = _get_saved_model_feeds_and_fetches(saved_model_dir, tags)
+  fetches = {k: v.name for k, v in outputs.items()}
+
+  feed_dict = {}
+  for k, v in inputs.items():
+    shape = [1, 2]
+    if v.HasField('tensor_shape'):
+      shape = tf.TensorShape(v.tensor_shape).as_list()
+      shape = list(map(lambda d: d if d else 1, shape))
+    if v.dtype == types_pb2.DT_STRING:
+      url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
+      img_bytes = requests.get(url).content
+      if False:  # Need to resize?
+        img = Image.open(io.BytesIO(img_bytes))
+        # img = img.resize((100, 100), Image.ANTIALIAS)
+        b = io.BytesIO()
+        img.save(b, 'JPEG')
+        img_bytes = b.getvalue()
+      feed_dict[v.name] = np.reshape(img_bytes, shape)
+    else:
+      feed_dict[v.name] = np.random.random_sample(shape).astype(
+          tf.DType(v.dtype).as_numpy_dtype)
+  return feed_dict, fetches
+
+
+def run():
+  saved_model_dir = '${1:/path/to/saved/model}'
+  tags = 'serve'
+  trt_precision_mode = '${2:FP16}'
+  feed_dict, fetches = _get_feed_dict_and_fetches(saved_model_dir, tags=tags)
+
+  config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+  if trt_precision_mode:
+    trt_saved_model_dir = tempfile.mkdtemp()
+    converter = trt.TrtGraphConverter(
+        input_saved_model_dir=saved_model_dir,
+        input_saved_model_tags=tags.split(','),
+        session_config=config,
+        max_workspace_size_bytes=1 << 30,
+        precision_mode=trt_precision_mode,
+        is_dynamic_op=True)
+    converter.convert()
+    if trt_precision_mode == 'INT8':
+      converter.calibrate(
+          fetch_names=list(fetches.values()),
+          num_runs=1,
+          feed_dict_fn=lambda: feed_dict)
+    converter.save(trt_saved_model_dir)
+    saved_model_dir = trt_saved_model_dir
+
+  g = tf.Graph()
+  with g.as_default():
+    s = tf.Session(config=config)
+    loader.load(s, tags.split(','), saved_model_dir)
+    r = s.run(fetches, feed_dict=feed_dict)
+    print(r)
+
+
+run()
+endsnippet
+
+snippet ,trtossexamplev2 "TF-TRT conversion example for open-source for TF v2.0" b
+import numpy as np
+import requests
+import tensorflow as tf
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+
+inp = np.random.random_sample(${3:[1, 224, 224, 3]}).astype(np.float32)
+inp_fp = tf.constant(inp)
+
+url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
+inp_img = requests.get(url).content
+if False:  # Need to resize?
+  img = Image.open(io.BytesIO(inp_img))
+  # img = img.resize((100, 100), Image.ANTIALIAS)
+  b = io.BytesIO()
+  img.save(b, 'JPEG')
+  inp_img = b.getvalue()
+inp_img = np.reshape(inp_img, (1,))
+
+saved_model_dir = '${1:/path/to/saved/model}'
+trt_precision_mode = '${2:FP16}'
+
+if trt_precision_mode:
+  trt_saved_model_dir = tempfile.mkdtemp()
+  params = trt.DEFAULT_TRT_CONVERSION_PARAMS._replace(
+      precision_mode=trt_precision_mode,
+      is_dynamic_op=True)
+  converter = trt.TrtGraphConverterV2(
+      input_saved_model_dir=saved_model_dir,
+      conversion_params=params)
+  converter.convert()
+  converter.save(trt_saved_model_dir)
+  saved_model_dir = trt_saved_model_dir
+
+root = tf.saved_model.load(saved_model_dir)
+concrete_func = root.signatures["serving_default"]
+r = concrete_func(${4}=${5:inp_fp})
+print(r)
+endsnippet
