@@ -1,3 +1,7 @@
+global !p
+import time
+endglobal
+
 snippet ,main "main function" bA
 int main(int argc, const char *argv[]) {
   $1
@@ -41,8 +45,13 @@ snippet log "LOG" bA
 LOG(${1:ERROR}) << 
 endsnippet
 
+snippet ,dlogm "#define helper macros for LOG" bA
+#define MYLOGPREFIX(id) "\033[44m\033[1m" << (id) << "\033[49m > \033[92m"
+#define MYLOGSUFFIX "\033[0m"
+endsnippet
+
 snippet dlog "LOG" bA
-LOG(WARNING) << "------------------------> " << 
+LOG(WARNING) << MYLOGPREFIX("`!p snip.rv = str(time.time()).split('.')[0][-5:]`") << $1 << MYLOGSUFFIX;
 endsnippet
 
 snippet "class " "class" brA
