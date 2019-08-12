@@ -3,7 +3,11 @@ import time
 endglobal
 
 snippet dlog "logging.warn" bA
-logging.warn("-" * 50 + "> " + str($1))
+logging.warn("\033[1m\033[92m" + str($1) + "\033[0m")
+endsnippet
+
+snippet d-log "logging.warn" bA
+logging.warn("\033[1m\033[92m" + ("-" * 50) + "> " + str($1) + "\033[0m")
 endsnippet
 
 snippet dprint "debug print" bA

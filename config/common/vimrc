@@ -81,6 +81,9 @@ else
   " set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
 endif
 
+" Don't scan included files.
+set complete-=i
+
 set expandtab
 " set history=65536
 

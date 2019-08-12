@@ -26,15 +26,33 @@ int main(int argc, const char *argv[]) {
 endsnippet
 
 snippet "if "  "if statement" brA
-if ($1) {
-  $2
-}
+if ($1) $2
 endsnippet
 
 snippet "for " "for statement" brA
 for ($1) {
   $2
 }
+endsnippet
+
+snippet "for([a-z_]+) " "for statement with single letter variable" brA
+for (int `!p snip.rv = match.group(1)` = 0; `!p snip.rv = match.group(1)` < $1; ++`!p snip.rv = match.group(1)`) {
+  $2
+}
+endsnippet
+
+snippet "\) {" "Curly brackets" irA
+) {
+  $1
+}
+endsnippet
+
+snippet ,[ "Square brackets" iA
+[$1]
+endsnippet
+
+snippet ,( "Parentheses" iA
+($1)
 endsnippet
 
 snippet vlog "VLOG" bA
@@ -45,13 +63,44 @@ snippet log "LOG" bA
 LOG(${1:ERROR}) << 
 endsnippet
 
+# See https://misc.flogisoft.com/bash/tip_colors_and_formatting for bash color
+# codes.
+#
+# [1m: bold
+# [44m: blue background
+# [49m: default background
+# [92m: light-green foreground
+# [0m: reset all
+#
+# #define MYLOGPREFIX(id) "\033[44m\033[1m" << (id) << "\033[49m > \033[92m"
+# #define MYLOGSUFFIX "\033[0m"
+# #define MYLOG(id) LOG(WARNING) << MYLOGPREFIX(#id)
 snippet ,dlogm "#define helper macros for LOG" bA
-#define MYLOGPREFIX(id) "\033[44m\033[1m" << (id) << "\033[49m > \033[92m"
+#define MYLOGPREFIX "\033[1m\033[92m"
 #define MYLOGSUFFIX "\033[0m"
+#define MYLOG LOG(WARNING) << MYLOGPREFIX
+#define MYDBG 1
 endsnippet
 
+# MYLOG(`!p snip.rv = str(time.time()).split('.')[0][-5:]`) << $1 << MYLOGSUFFIX;
 snippet dlog "LOG" bA
-LOG(WARNING) << MYLOGPREFIX("`!p snip.rv = str(time.time()).split('.')[0][-5:]`") << $1 << MYLOGSUFFIX;
+MYLOG << $1 << MYLOGSUFFIX;
+endsnippet
+
+snippet d-log "LOG" bA
+MYLOG << "-----------------------------> " << $1 << MYLOGSUFFIX;
+endsnippet
+
+snippet ifd "#if MYDBG" bA
+#if MYDBG
+$1
+#endif
+endsnippet
+
+snippet ifnd "#if !MYDBG" bA
+#if !MYDBG
+$1
+#endif
 endsnippet
 
 snippet "class " "class" brA
