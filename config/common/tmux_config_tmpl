@@ -75,33 +75,7 @@ set-option -g history-limit 16384
 # set-option -g visual-activity on
 # set-window-option -g monitor-activity on
 
-# custom environment, replace <windowX> with the actual name of the window
-# set-option -g set-remain-on-exit on
-# set-option -g set-remain-on-exit off
-# set -u set-remain-on-exit
-new-session -n <window0> -s <mysession>
-send-keys -t <mysession>:0 "cd <path0>" C-m
-new-window -n <window1> -c <path1>
-new-window -n <window2> -c <path2>
-new-window -n <window3> -c <path3>
-new-window -n <window4> -c <path4>
-new-window -n <window5> -c <path5>
-new-window -n <window6> -c <path6>
-new-window -n <window7> -c <path7>
-new-window -n <window8> -c <path8>
-new-window -n <window9> -c <path9>
-
 # Rebind 'c' command so new windows are created with same current directory.
 bind-key c new-window -c '#{pane_current_path}' \; send-keys "cd .; clear" c-m
 bind-key | split-window -h -c '#{pane_current_path}' \; send-keys "cd .; clear" c-m
 bind-key - split-window -v -c '#{pane_current_path}' \; send-keys "cd .; clear" c-m
-
-# select-window -t <mysession>:0
-## try to clear the ugly alarms!!!
-## TODO(laigd): try to switch to each window and send some command to it like C-l
-# send-keys -R -t <mysession>:0 'tmux next-window -a' c-m
-# <repeat the above command>
-
-select-window -t <mysession>:0
-# send-keys -R -t <mysession>:0 c-l
-send-keys -R -t <mysession>:0 clear c-m

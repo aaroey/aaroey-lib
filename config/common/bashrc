@@ -89,14 +89,25 @@ init_git() {
   git config --global alias.co checkout
   git config --global alias.st status
 }
+init_tmux() {
+  local config="$HOME/.tmux.conf"
+  if ! [[ -f "$config" ]]; then
+    cp $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl "$config"
+  fi
+}
 init() {
   init_inputrc
   make_docker_root
   export_ps1
   init_vim
   init_git
+  init_tmux
 }
 init
+
+cdaaroey() {
+  cd "$AAROEY_LIB_DIR"
+}
 
 ##################################### bash #####################################
 
@@ -467,30 +478,39 @@ new_tmux_session() {
     return
   fi
 
-  local tmpconfig=~/.tmux.conf
-  if [[ $anysession ]]; then
-    tmpconfig=/tmp/tmux.conf.$1
-  fi
+  # Custom environment
+  # tmux set-option -g set-remain-on-exit on
+  # tmux set-option -g set-remain-on-exit off
+  # tmux set -u set-remain-on-exit
+  #
+  # '-d' is needed so it doesn't attach the session to current terminal, which
+  # allows manipulating it using the commands that follow.
+  tmux new-session -d -n ${1:-$USER} -s $session
+  tmux send-keys  -t $session:0 "cd ${2:-~}" C-m
+  tmux new-window -d -t $session: -n ${3:-$USER}  -c ${4:-~}
+  tmux new-window -d -t $session: -n ${5:-$USER}  -c ${6:-~}
+  tmux new-window -d -t $session: -n ${7:-$USER}  -c ${8:-~}
+  tmux new-window -d -t $session: -n ${9:-$USER}  -c ${10:-~}
+  tmux new-window -d -t $session: -n ${11:-$USER} -c ${12:-~}
+  tmux new-window -d -t $session: -n ${13:-$USER} -c ${14:-~}
+  tmux new-window -d -t $session: -n ${15:-$USER} -c ${16:-~}
+  tmux new-window -d -t $session: -n ${17:-$USER} -c ${18:-~}
+  tmux new-window -d -t $session: -n ${19:-$USER} -c ${20:-~}
 
-  cat $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl              \
-    | sed "s/<mysession>/$session/g"                              \
-    | sed "s/<window0>/${1:-$USER}/g"  | sed "s#<path0>#${2:-~}#g"    \
-    | sed "s/<window1>/${3:-$USER}/g"  | sed "s#<path1>#${4:-~}#g"    \
-    | sed "s/<window2>/${5:-$USER}/g"  | sed "s#<path2>#${6:-~}#g"    \
-    | sed "s/<window3>/${7:-$USER}/g"  | sed "s#<path3>#${8:-~}#g"    \
-    | sed "s/<window4>/${9:-$USER}/g"  | sed "s#<path4>#${10:-~}#g"   \
-    | sed "s/<window5>/${11:-$USER}/g" | sed "s#<path5>#${12:-~}#g"   \
-    | sed "s/<window6>/${13:-$USER}/g" | sed "s#<path6>#${14:-~}#g"   \
-    | sed "s/<window7>/${15:-$USER}/g" | sed "s#<path7>#${16:-~}#g"   \
-    | sed "s/<window8>/${17:-$USER}/g" | sed "s#<path8>#${18:-~}#g"   \
-    | sed "s/<window9>/${19:-$USER}/g" | sed "s#<path9>#${20:-~}#g"   \
-    > $tmpconfig
-  if [[ $anysession ]]; then
-    tmux source $tmpconfig
-    tmux attach -t $session
-  else
-    tmux attach
-  fi
+  # tmux select-window -t $session:0
+  ## TODO(laigd): try to clear the ugly alarms!!!
+  ## TODO(laigd): try to switch to each window and send some command to it like
+  ## C-l
+  # tmux send-keys -R -t $session:0 'tmux next-window -a' c-m
+  # <repeat the above command>
+
+  # tmux select-window -t $session:0
+  # tmux send-keys -R -t $session:0 c-l
+  tmux send-keys -R -t $session:0 clear c-m
+  tmux attach -t $session
+
+  # tmux source $tmpconfig
+  # tmux attach
 }
 # -d means to detach other attached clients
 tt() { tmux attach -d -t "$@"; }
@@ -499,6 +519,36 @@ tsendkey() {
   local session=$1
   shift
   tmux send-keys -t mysession:$session "$@" C-m
+}
+TMUX_SAVED_SESSION_FILE="$HOME/.tmux-session"
+tmux_save() {
+  local d=$'\t'
+  tmux list-windows -a -F "#S${d}#W${d}#{pane_current_path}" \
+    > $TMUX_SAVED_SESSION_FILE
+}
+tmux_restore() {
+  _terminal_size() {
+    stty size 2>/dev/null | awk '{ printf "-x%d -y%d", $2, $1 }'
+  }
+  _session_exists() {
+    tmux has-session -t "$1" 2>/dev/null
+  }
+
+  tmux start-server
+  local count=0
+  local dimensions="$(_terminal_size)"
+  while IFS=$'\t' read session_name window_name dir; do
+    if [[ -d "$dir" && $window_name != "log" && $window_name != "man" ]]; then
+      if _session_exists "$session_name"; then
+        tmux new-window -d -t "$session_name:" -n "$window_name" -c "$dir"
+      else
+        cd "$dir" &&
+          tmux new-session -d -s "$session_name" -n "$window_name" $dimensions
+        count=$(( count + 1 ))
+      fi
+    fi
+  done < $TMUX_SAVED_SESSION_FILE
+  echo "Restored $count sessions"
 }
 
 ################################# nvidia gpu ###################################

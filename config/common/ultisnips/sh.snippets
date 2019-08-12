@@ -4,3 +4,21 @@ case ${1:word} in
     $3;;
 esac
 endsnippet
+
+snippet "if "  "if statement" brA
+if [[ $1 ]]; then
+  $2
+fi
+endsnippet
+
+snippet "for " "for statement" brA
+for ${1:i} in $2; do
+  $3
+done
+endsnippet
+
+snippet "\) {" "Curly brackets" irA
+) {
+  $1
+}
+endsnippet
