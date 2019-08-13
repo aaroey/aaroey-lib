@@ -550,6 +550,25 @@ tmux_restore() {
   done < $TMUX_SAVED_SESSION_FILE
   echo "Restored $count sessions"
 }
+get_tmux_window_name() {
+  if [[ "$TERM" != "screen"* ]] || [[ "$TMUX" == '' ]]; then
+    return  # Not in tmux session.
+  fi
+  local dirname="${PWD##*/}"
+  if [[ "$PWD" == ????????????'cloud/laigd/'* ]]; then
+    dirname=${PWD##*laigd/}
+    dirname=${dirname%%/*}
+  fi
+  # printf "\033k$dirname\033\\"
+  tmux rename-window "$dirname"
+}
+cd() {
+  if [[ $# -gt 1 ]]; then
+    echo 'Usage: cd [<dir>]'
+    return
+  fi
+  builtin cd $1 && get_tmux_window_name
+}
 
 ################################# nvidia gpu ###################################
 cuda_version() {
