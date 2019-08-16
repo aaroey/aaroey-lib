@@ -3,15 +3,15 @@ import time
 endglobal
 
 snippet dlog "logging.warn" bA
-logging.warn("\033[1m\033[92m" + str($1) + "\033[0m")
+logging.warn("\033[1m\033[92m" + str($0) + "\033[0m")
 endsnippet
 
 snippet d-log "logging.warn" bA
-logging.warn("\033[1m\033[92m" + ("-" * 50) + "> " + str($1) + "\033[0m")
+logging.warn("\033[1m\033[92m" + ("-" * 50) + "> " + str($0) + "\033[0m")
 endsnippet
 
 snippet dprint "debug print" bA
-print("\033[44m\033[1m`!p snip.rv = str(time.time()).split('.')[0][-5:]`\033[49m > \033[92m" + str($1) + "\033[0m")
+print("\033[44m\033[1m`!p snip.rv = str(time.time()).split('.')[0][-5:]`\033[49m > \033[92m" + str($0) + "\033[0m")
 endsnippet
 
 snippet todo "TODO" bA

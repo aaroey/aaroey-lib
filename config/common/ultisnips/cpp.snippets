@@ -4,7 +4,7 @@ endglobal
 
 snippet ,main "main function" bA
 int main(int argc, const char *argv[]) {
-  $1
+  $0
   return 0;
 }
 endsnippet
@@ -20,39 +20,45 @@ using std::cout;
 using std::endl;
 
 int main(int argc, const char *argv[]) {
-  $1
+  $0
   return 0;
 }
 endsnippet
 
 snippet "if "  "if statement" brA
-if ($1) $2
+if ($0) 
 endsnippet
 
 snippet "for " "for statement" brA
 for ($1) {
-  $2
+  $0
 }
 endsnippet
 
 snippet "for([a-z_]+) " "for statement with single letter variable" brA
 for (int `!p snip.rv = match.group(1)` = 0; `!p snip.rv = match.group(1)` < $1; ++`!p snip.rv = match.group(1)`) {
-  $2
+  $0
+}
+endsnippet
+
+snippet "while " "while statement" brA
+while ($1) {
+  $0
 }
 endsnippet
 
 snippet "\) {" "Curly brackets" irA
 ) {
-  $1
+  $0
 }
 endsnippet
 
 snippet ,[ "Square brackets" iA
-[$1]
+[$0]
 endsnippet
 
 snippet ,( "Parentheses" iA
-($1)
+($0)
 endsnippet
 
 snippet vlog "VLOG" bA
@@ -82,9 +88,9 @@ snippet ,dlogm "#define helper macros for LOG" bA
 #define MYDBG 1
 endsnippet
 
-# MYLOG(`!p snip.rv = str(time.time()).split('.')[0][-5:]`) << $1 << MYLOGSUFFIX;
+# MYLOG(`!p snip.rv = str(time.time()).split('.')[0][-5:]`) << $0 << MYLOGSUFFIX;
 snippet dlog "LOG" bA
-MYLOG << $1 << MYLOGSUFFIX;
+MYLOG << $0 << MYLOGSUFFIX;
 endsnippet
 
 snippet d-log "LOG" bA
@@ -93,20 +99,20 @@ endsnippet
 
 snippet ifd "#if MYDBG" bA
 #if MYDBG
-$1
+$0
 #endif
 endsnippet
 
 snippet ifnd "#if !MYDBG" bA
 #if !MYDBG
-$1
+$0
 #endif
 endsnippet
 
 snippet "class " "class" brA
 class $1 {
  public:
-  $2
+  $0
 };
 endsnippet
 
@@ -115,21 +121,21 @@ snippet todo "TODO" bA
 endsnippet
 
 snippet inc "#include" bA
-#include 
+#include "$0"
 endsnippet
 
 snippet ,v "std::vector" i
-std::vector<$1> 
+std::vector<$0> 
 endsnippet
 
 snippet ,m "std::map" i
-std::map<$1> 
+std::map<$0> 
 endsnippet
 
 snippet ,up "std::unique_ptr" i
-std::unique_ptr<$1> 
+std::unique_ptr<$0> 
 endsnippet
 
 snippet ,um "std::unordered_map" i
-std::unordered_map<$1> 
+std::unordered_map<$0> 
 endsnippet
