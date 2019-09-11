@@ -538,7 +538,7 @@ tmux_restore() {
   local count=0
   local dimensions="$(_terminal_size)"
   while IFS=$'\t' read session_name window_name dir; do
-    if [[ -d "$dir" && $window_name != "log" && $window_name != "man" ]]; then
+    if [[ -d "$dir" ]]; then
       if _session_exists "$session_name"; then
         tmux new-window -d -t "$session_name:" -n "$window_name" -c "$dir"
       else
@@ -678,8 +678,13 @@ virtualenv_activate() {
     return
   fi
   local vedir="$1"
-  if [[ $vedir == '' ]]; then
+  local pyver="$2"
+  if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
+    return
+  fi
+  if [[ "$pyver" != 3 ]] && [[ "$pyver" != 2 ]]; then
+    echo 'python version should be 2 or 3!'
     return
   fi
   if [[ "$VIRTUAL_ENV" == "$vedir" ]]; then
@@ -691,7 +696,6 @@ virtualenv_activate() {
     return $VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE
   fi
 
-  local pyver="$2"
   local activate_file="$vedir/bin/activate"
 
   # This is very important! If not using a new dir, when importing modules,
@@ -716,7 +720,7 @@ virtualenv_activate() {
     selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
     Faker \
     img2html pandas nltk soundfile sox matplotlib \
-    keras_applications keras_preprocessing tensorflow-serving-api
+    keras_applications keras_preprocessing tensorflow-serving-api tensorflow-datasets
 
   # if [[ $pyver == '3' ]]; then
   #   virtualenv_pip_install $pyver something
@@ -736,40 +740,29 @@ virtualenv_deactivate() {
   # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  local usage='Usage: vadtmpl nightly|nightlyv2|mytfpy3|mytf2py3|cpu|<empty> py2|py3 <workspace>'
-  if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]; then
+  local usage='Usage: vadtmpl nightly|nightlyv2|mytfpy3|mytf2py3|cpu|<empty> <workspace>'
+  if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
     echo $usage
     return
   fi
+  set_x
   local tag=$1
-  local pyverstr=$2
-
-  local pyver=''
-  if [[ "$pyverstr" == 'py3' ]]; then
-    pyver=3
-  elif [[ "$pyverstr" == 'py2' ]]; then
-    pyver=2
-  else
-    echo 'Error: python version not specified correctly.'
-    echo $usage
-    return
-  fi
-
+  local pyver=3
   local dir=$HOME/tmp
   local veworkspace=$dir/default_virtualenv_workspace
   local tfpkg=''
   if [[ "$tag" == 'cpu' ]]; then
     tfpkg='tensorflow'
+  elif [[ "$tag" == 'gpu' ]]; then
+    tfpkg='tensorflow-gpu'
   elif [[ "$tag" == 'nightly' ]]; then
     tfpkg='tf-nightly-gpu'
   elif [[ "$tag" == 'nightlyv2' ]]; then
     tfpkg='tf-nightly-gpu-2.0-preview'   # See https://pypi.org/project/tf-nightly-gpu-2.0-preview/#history
-  elif [[ "$tag" == '' ]]; then
-    tfpkg='tensorflow-gpu'
-  else
+  elif [[ "$tag" ]]; then
     dir=~/Workspace/aaroey/$tag
   fi
-  local vedir="$dir/virtualenv_${pyverstr}"
+  local vedir="$dir/virtualenv_py${pyver}"
   if [[ "$tfpkg" != '' ]]; then
     vedir="$vedir=$tfpkg"
   fi
@@ -787,17 +780,19 @@ vadtmpl() {
     popd
     pushd "$3"
   fi
+  reset_x
 }
 dav() {
   virtualenv_deactivate
   popd
 }
-vad()          { vadtmpl '' py3 "$@";        }
-vadnightly()   { vadtmpl nightly py3 "$@";   }
-vadnightlyv2() { vadtmpl nightlyv2 py3 "$@"; }
-vadmytfpy()    { vadtmpl mytfpy3 py3 "$@";   }
-vadmytf2py()   { vadtmpl mytf2py3 py3 "$@";  }
-vadcpu()       { vadtmpl cpu py3 "$@";       }
+vadempty()     { vadtmpl ''        "$@"; }
+vadcpu()       { vadtmpl cpu       "$@"; }
+vad()          { vadtmpl gpu       "$@"; }
+vadnightly()   { vadtmpl nightly   "$@"; }
+vadnightlyv2() { vadtmpl nightlyv2 "$@"; }
+vadmytfpy()    { vadtmpl mytfpy3   "$@"; }
+vadmytf2py()   { vadtmpl mytf2py3  "$@"; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
@@ -840,31 +835,34 @@ ipython() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
 # bash in vi-mode you can press v in normal mode to edit the command similarly
 # to Ctrl-X Ctrl-E
 
-X_SET=''
-# TODO(aaroey): use a stack to record the sequence of calls to these methods and
-# pop the last state in reset_x
-set_x_if_not_set() {
-  if [[ "$-" == *x* ]]; then
-    X_SET=1
-  else
-    X_SET=0
-    set -x
-  fi
+x_stack=()
+x_stack_push() {
+  x_stack=("${x_stack[@]}" "$1")
 }
-unset_x_if_set() {
+x_stack_pop() {
+  local size=${#x_stack[@]}
+  echo "${x_stack[$size-1]}"
+  unset x_stack[$size-1]
+}
+set_x() {
   if [[ "$-" == *x* ]]; then
-    set +x
-    X_SET=1
+    x_stack_push -x
   else
-    X_SET=0
+    x_stack_push +x
   fi
+  set -x
+}
+unset_x() {
+  if [[ "$-" == *x* ]]; then
+    x_stack_push -x
+  else
+    x_stack_push +x
+  fi
+  set +x
 }
 reset_x() {
-  if [[ $X_SET ]]; then
-    set -x
-  else
-    set +x
-  fi
+  local last_state=$(x_stack_pop)
+  set $last_state
 }
 printsplitline() {
   local console_width=$(tput cols)
@@ -880,14 +878,13 @@ printsplitline() {
   >&2 echo
 }
 printsplitlines() {
+  unset_x
   printsplitline
   printsplitline "$@"
-}
-printsplitlinesnox() {
-  unset_x_if_set
-  printsplitlines "$@"
   reset_x
 }
+export -f printsplitline printsplitlines set_x unset_x reset_x
+
 runperiodically() {
   for ((i=0;i<1000;++i)); do
     echo $i $@

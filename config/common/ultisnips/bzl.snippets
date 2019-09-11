@@ -1,0 +1,20 @@
+snippet "(cc|py|java)_binary" "binary" brA
+`!p snip.rv = match.group(1)`_binary(
+    name = "$1",
+    srcs = ["$2"],
+    deps = [
+        $0
+    ],
+)
+endsnippet
+
+snippet "(cc|py|java|cuda)_library" "library" brA
+`!p snip.rv = match.group(1)`_library(
+    name = "$1",
+    srcs = ["${3:$1.cc}"],
+    hdrs = ["${2:$1.h}"],
+    deps = [
+        $0
+    ],
+)
+endsnippet

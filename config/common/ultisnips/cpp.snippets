@@ -19,7 +19,7 @@ using std::cin;
 using std::cout;
 using std::endl;
 
-int main(int argc, const char *argv[]) {
+int main(int argc, char **argv) {
   $0
   return 0;
 }
@@ -116,7 +116,13 @@ class $1 {
 };
 endsnippet
 
-snippet todo "TODO" bA
+snippet "struct " "struct" brA
+struct $1 {
+  $0
+};
+endsnippet
+
+snippet "((//)? *todo)" "TODO" brA
 // TODO(laigd): 
 endsnippet
 
