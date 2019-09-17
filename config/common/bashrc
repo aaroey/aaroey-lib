@@ -556,7 +556,7 @@ get_tmux_window_name() {
   fi
   local dirname="${PWD##*/}"
   if [[ "$PWD" == ????????????'cloud/laigd/'* ]]; then
-    dirname=${PWD##*laigd/}
+    dirname=${PWD##*cloud/laigd/}
     dirname=${dirname%%/*}
   fi
   # printf "\033k$dirname\033\\"
@@ -673,20 +673,17 @@ already_in_virtualenv() {
 }
 OLD_PYTHONPATH=''
 virtualenv_activate() {
-  if [[ $# -ne 2 ]]; then
-    echo 'Usage: activate_virtualenv <absolute_virtualenv_dir> <python_version>'
+  if [[ $# -lt 1 ]] || [[ $# -gt 2 ]]; then
+    echo 'Usage: virtualenv_activate <virtualenv_dir> [<python_version>]]'
     return
   fi
+
   local vedir="$1"
-  local pyver="$2"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
   fi
-  if [[ "$pyver" != 3 ]] && [[ "$pyver" != 2 ]]; then
-    echo 'python version should be 2 or 3!'
-    return
-  fi
+  vedir="$(readlink -f $vedir)"
   if [[ "$VIRTUAL_ENV" == "$vedir" ]]; then
     echo 'Already inside the same virtualenv environment, skipping...'
     return
@@ -694,6 +691,12 @@ virtualenv_activate() {
     echo "Already inside a different virtualenv environment $VIRTUAL_ENV"
     echo "Please deactivate and try again."
     return $VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE
+  fi
+
+  local pyver="${2:-3}"
+  if [[ "$pyver" != 3 ]] && [[ "$pyver" != 2 ]]; then
+    echo 'python version should be 2 or 3!'
+    return
   fi
 
   local activate_file="$vedir/bin/activate"
@@ -760,7 +763,7 @@ vadtmpl() {
   elif [[ "$tag" == 'nightlyv2' ]]; then
     tfpkg='tf-nightly-gpu-2.0-preview'   # See https://pypi.org/project/tf-nightly-gpu-2.0-preview/#history
   elif [[ "$tag" ]]; then
-    dir=~/Workspace/aaroey/$tag
+    dir=$HOME/Workspace/aaroey/$tag
   fi
   local vedir="$dir/virtualenv_py${pyver}"
   if [[ "$tfpkg" != '' ]]; then
