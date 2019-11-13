@@ -2,19 +2,45 @@ global !p
 import time
 endglobal
 
-snippet dlog "logging.warn" bA
-logging.warn("\033[1m\033[92m> ${1:" + str($0) + "}\033[0m")
+# See https://misc.flogisoft.com/bash/tip_colors_and_formatting for bash color
+# codes.
+#
+# [1m: bold
+# [44m: blue background
+# [49m: default background
+# [91m: light-red foreground
+# [92m: light-green foreground
+# [93m: light-yellow foreground
+# [94m: light-blue foreground
+# [0m: reset all
+
+snippet ,dlogm "debug log utils" bA
+MYLOGSUFFIX_GREEN = "\033[1m\033[92m"
+MYLOGPREFIX_RED = "\033[1m\033[91m"
+MYLOGSUFFIX = "\033[0m"
+
+def dprint(tag, *args):
+  print("\033[44m\033[1m", tag, "\033[49m>\033[92m", *args, "\033[0m")
+
 endsnippet
 
-snippet d-log "logging.warn" bA
-logging.warn("\033[1m\033[92m" + ("-" * 50) + "> ${1:" + str($0) + "}\033[0m")
+snippet dwarn "logging.warn" bA
+logging.warning(MYLOGSUFFIX_GREEN + "> " + ${1:str($0)} + MYLOGSUFFIX)
+endsnippet
+
+snippet d-warn "logging.warn" bA
+logging.warning(MYLOGSUFFIX_GREEN + ("-" * 50) + "> " + ${1:str($0)} + MYLOGSUFFIX)
+endsnippet
+
+snippet derr "logging.warn" bA
+logging.warning(MYLOGPREFIX_RED + "> " + ${1:str($0)} + MYLOGSUFFIX)
 endsnippet
 
 snippet dprint "debug print" bA
-print("\033[44m\033[1m`!p snip.rv = str(time.time()).split('.')[0][-5:]`\033[49m >\033[92m ${1:" + str($0) + "}\033[0m")
+dprint(`!p snip.rv = str(time.time()).split('.')[0][-5:]`, $0)
 endsnippet
 
-snippet "((//)? *todo)" "TODO" brA
+snippet "((#)? *todo)" "TODO" brA
 # TODO(laigd): 
 endsnippet
 
@@ -34,7 +60,7 @@ snippet ,itrt "import trt_convert" bA
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 endsnippet
 
-snippet ,trtossexamplev1 "TF-TRT conversion example for open-source for TF v1.x" b
+snippet ,trtossv1 "TF-TRT conversion example for open-source for TF v1.x" bA
 from PIL import Image
 import io
 import requests
@@ -152,42 +178,78 @@ def run():
 run()
 endsnippet
 
-snippet ,trtossexamplev2 "TF-TRT conversion example for open-source for TF v2.0" b
+snippet ,trtossv2 "TF-TRT conversion example for open-source for TF v2.0" bA
+import datetime
 import numpy as np
 import requests
+import tempfile
 import tensorflow as tf
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
-inp = np.random.random_sample(${3:[1, 224, 224, 3]}).astype(np.float32)
-inp_fp = tf.constant(inp)
+def get_input_fp(shape):
+  inp = np.random.random_sample(shape).astype(np.float32)
+  inp_fp = tf.constant(inp)
+  return inp_fp
 
-url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
-inp_img = requests.get(url).content
-if False:  # Need to resize?
-  img = Image.open(io.BytesIO(inp_img))
-  # img = img.resize((100, 100), Image.ANTIALIAS)
-  b = io.BytesIO()
-  img.save(b, 'JPEG')
-  inp_img = b.getvalue()
-inp_img = np.reshape(inp_img, (1,))
+def get_input_img(shape):
+  url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
+  inp_img = requests.get(url).content
+  if False:  # Need to resize?
+    img = Image.open(io.BytesIO(inp_img))
+    # img = img.resize((100, 100), Image.ANTIALIAS)
+    b = io.BytesIO()
+    img.save(b, 'JPEG')
+    inp_img = b.getvalue()
+  inp_img = np.reshape(inp_img, (1,))
+  return inp_img
+
+def get_sm(saved_model_dir, trt_precision_mode, inp):
+  if trt_precision_mode:
+    trt_saved_model_dir = tempfile.mkdtemp()
+    params = trt.DEFAULT_TRT_CONVERSION_PARAMS._replace(
+        precision_mode=trt_precision_mode,
+        is_dynamic_op=True)
+    converter = trt.TrtGraphConverterV2(
+        input_saved_model_dir=saved_model_dir,
+        conversion_params=params)
+    if trt_precision_mode == 'INT8':
+      def inp_fn():
+        yield inp
+      converter.convert(calibration_input_fn=inp_fn)
+    else:
+      converter.convert()
+    converter.save(trt_saved_model_dir)
+    saved_model_dir = trt_saved_model_dir
+
+  root = tf.saved_model.load(saved_model_dir)
+  return root
+
+def run(f, inp):
+  r = f(inp)
+  print(r)
+
+def run_and_time(f, inp):
+  # warmup
+  for _ in range(5):
+    f(inp)
+
+  # benchmark
+  NUM_RUNS = 100
+  dt0 = datetime.datetime.now()
+  for _ in range(NUM_RUNS):
+    f(inp)
+  dt1 = datetime.datetime.now()
+  print('precision:', trt_precision_mode, ', time for', NUM_RUNS, 'runs:',
+        dt1 - dt0)
+
+shape = ${3:[1, 224, 224, 3]}
+inp_fp = get_input_fp(shape)
 
 saved_model_dir = '${1:/path/to/saved/model}'
 trt_precision_mode = '${2:FP16}'
-
-if trt_precision_mode:
-  trt_saved_model_dir = tempfile.mkdtemp()
-  params = trt.DEFAULT_TRT_CONVERSION_PARAMS._replace(
-      precision_mode=trt_precision_mode,
-      is_dynamic_op=True)
-  converter = trt.TrtGraphConverterV2(
-      input_saved_model_dir=saved_model_dir,
-      conversion_params=params)
-  converter.convert()
-  converter.save(trt_saved_model_dir)
-  saved_model_dir = trt_saved_model_dir
-
-root = tf.saved_model.load(saved_model_dir)
+root = get_sm(saved_model_dir, trt_precision_mode, (inp_fp,))
 concrete_func = root.signatures["serving_default"]
-r = concrete_func(${4}=${5:inp_fp})
-print(r)
+
+run(concrete_func, inp_fp)
+# run_and_time(concrete_func, inp_fp)
 endsnippet

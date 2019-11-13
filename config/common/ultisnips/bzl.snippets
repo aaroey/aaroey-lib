@@ -1,5 +1,5 @@
-snippet "(cc|py|java)_binary" "binary" brA
-`!p snip.rv = match.group(1)`_binary(
+snippet "(cc_binary|py_library|java_library)" "binary" brA
+`!p snip.rv = match.group(1)`(
     name = "$1",
     srcs = ["$2"],
     deps = [
@@ -8,7 +8,7 @@ snippet "(cc|py|java)_binary" "binary" brA
 )
 endsnippet
 
-snippet "(cc|py|java|cuda)_library" "library" brA
+snippet "(cc|cuda)_library" "library" brA
 `!p snip.rv = match.group(1)`_library(
     name = "$1",
     srcs = ["${3:$1.cc}"],

@@ -231,7 +231,7 @@ dutop()  { du -a -h "$@" | sort -r -h | head -n 30; }
 # fi
 ll()     { ls -alhF --color "$@";                   }
 
-llpwd()  { for i in "$@"; do ll -d -1 "$PWD/$i"; done }
+llpwd()  { for i in "$@"; do ll -d -1 $(readlink -f $i); done }
 
 # date
 # Timezones: ll /usr/share/zoneinfo/
@@ -272,6 +272,9 @@ basefrom10() { echo "obase=$1;$2" | bc;                   }
 
 lddclean() {
   LD_LIBRARY_PATH= ldd "$@"
+}
+soname() {
+  objdump -p "$1" | grep SONAME
 }
 
 hist() {
@@ -619,11 +622,11 @@ dockerrunsimplewithbash() {
   local mydockerrepo=lam8da/aaroey-env
   local tag=${1:-$mydockerrepo}
   if [[ "$tag" == $mydockerrepo ]]; then
-    local cuda_major=${cuda_major:-9}
-    local cuda_minor=${cuda_minor:-0}
+    local cuda_major=${cuda_major:-10}
+    local cuda_minor=${cuda_minor:-1}
     local cudnn_major=${cudnn_major:-7}
     local cudnn_version_suffix=${cudnn_version_suffix:-5.1.10}
-    local tensorrt_version=${tensorrt_version:-5.1.5}
+    local tensorrt_version=${tensorrt_version:-6.0.1}
     local tag_suffix=cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
     tag=$mydockerrepo:$tag_suffix
 
@@ -719,7 +722,7 @@ virtualenv_activate() {
   source "$activate_file"
   # Note @2018/12/06: recordclass, scrapy is not py36 compatible
   virtualenv_pip_install $pyver \
-    mock ipython recordclass Pillow jupyter numpy \
+    mock ipython recordclass Pillow jupyter numpy scipy \
     selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
     Faker \
     img2html pandas nltk soundfile sox matplotlib \
@@ -886,7 +889,7 @@ printsplitlines() {
   printsplitline "$@"
   reset_x
 }
-export -f printsplitline printsplitlines set_x unset_x reset_x
+export -f printsplitline printsplitlines set_x unset_x reset_x x_stack_push x_stack_pop
 
 runperiodically() {
   for ((i=0;i<1000;++i)); do

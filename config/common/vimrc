@@ -99,6 +99,7 @@ set laststatus=2                " Always display the last status
 set matchpairs=(:),{:},[:],<:>
 set nrformats=alpha,octal,hex
 set number
+" set relativenumber
 set shiftwidth=2                " Force this again although it may have been done before
 set showcmd
 set showmatch                   " Show matching braces / brackets
@@ -131,6 +132,13 @@ syntax on
 " Store/resume view setting
 au BufWinLeave ?* silent mkview  " '?' stands for any single character
 au BufWinEnter ?* silent loadview
+
+" Change line number mode when changing buffer.
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu | set rnu   | endif
+  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu | set nornu | endif
+augroup END
 
 " Function to permanently delete views created by 'mkview'
 function! MyDeleteView()
