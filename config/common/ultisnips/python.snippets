@@ -15,37 +15,62 @@ endglobal
 # [0m: reset all
 
 snippet ,dlogm "debug log utils" bA
-MYLOGSUFFIX_GREEN = "\033[1m\033[92m"
-MYLOGPREFIX_RED = "\033[1m\033[91m"
-MYLOGSUFFIX = "\033[0m"
+_D_END = "\033[0m"
+_D_BOLD = "\033[1m"
+_D_BOLD_END = "\033[21m"
+_DF_RED = "\033[91m"
+_DF_GREEN = "\033[92m"
+_DF_YELLOW = "\033[93m"
+_DF_BLUE = "\033[94m"
+_DF_END = "\033[39m"
+_DB_RED = "\033[41m"
+_DB_GREEN = "\033[42m"
+_DB_YELLOW = "\033[43m"
+_DB_BLUE = "\033[44m"
+_DB_END = "\033[49m"
 
-def dprint(tag, *args):
-  print("\033[44m\033[1m", tag, "\033[49m>\033[92m", *args, "\033[0m")
+def dcallinfo(color=_DF_GREEN):
+  from inspect import getframeinfo, stack
+  caller = getframeinfo(stack()[2][0])
+  return "%s%s%s:%s%s%s > " % (_D_BOLD, _DB_BLUE, caller.filename.split("/")[-1], caller.lineno, _DB_END, color)
 
+def dprint(*args):
+  print(dcallinfo(), *args, _D_END)
+
+def dwarn(msg, *args, **kwargs):
+  logging.warning(dcallinfo() + msg + _D_END, *args, **kwargs)
+
+def derr(msg, *args, **kwargs):
+  logging.warning(dcallinfo(_DF_RED) + msg + _D_END, *args, **kwargs)
 endsnippet
 
-snippet dwarn "logging.warn" bA
-logging.warning(MYLOGSUFFIX_GREEN + "> " + ${1:str($0)} + MYLOGSUFFIX)
+snippet dw "logging.warn" bA
+dwarn(${1:str($0)})
 endsnippet
 
-snippet d-warn "logging.warn" bA
-logging.warning(MYLOGSUFFIX_GREEN + ("-" * 50) + "> " + ${1:str($0)} + MYLOGSUFFIX)
+snippet dr "logging.warn" bA
+derr(${1:str($0)})
 endsnippet
 
-snippet derr "logging.warn" bA
-logging.warning(MYLOGPREFIX_RED + "> " + ${1:str($0)} + MYLOGSUFFIX)
+snippet d- "logging.warn" bA
+dwarn(("-" * 50) + ${1:str($0)})
 endsnippet
 
-snippet dprint "debug print" bA
-dprint(`!p snip.rv = str(time.time()).split('.')[0][-5:]`, $0)
+# dprint(`!p snip.rv = '1' + str(time.time()).split('.')[0][-5:]`, $0)
+snippet dp "debug print" bA
+dprint($0)
 endsnippet
 
-snippet "((#)? *todo)" "TODO" brA
+snippet "((# *)?todo)" "TODO" brA
 # TODO(laigd): 
 endsnippet
 
 snippet ,pdb "pdb debug" bA
 import pdb; pdb.set_trace()
+endsnippet
+
+snippet ,stack "print current stacktrace" bA
+import traceback; traceback.print_stack()
 endsnippet
 
 snippet ,inp "import numpy" bA
@@ -58,6 +83,10 @@ endsnippet
 
 snippet ,itrt "import trt_convert" bA
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
+endsnippet
+
+snippet ,tfwg "write tf graph" bA
+tf.compat.v1.train.write_graph(tf.compat.v1.get_default_graph(), ${1:'/tmp/'}, ${2:'mygraph.pbtxt'}, as_text=True)
 endsnippet
 
 snippet ,trtossv1 "TF-TRT conversion example for open-source for TF v1.x" bA
@@ -125,7 +154,7 @@ def _get_feed_dict_and_fetches(saved_model_dir, tags=None):
     shape = [1, 2]
     if v.HasField('tensor_shape'):
       shape = tf.TensorShape(v.tensor_shape).as_list()
-      shape = list(map(lambda d: d if d else 1, shape))
+      shape = list(map(d if d else 1, shape))
     if v.dtype == types_pb2.DT_STRING:
       url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
       img_bytes = requests.get(url).content
@@ -163,7 +192,7 @@ def run():
       converter.calibrate(
           fetch_names=list(fetches.values()),
           num_runs=1,
-          feed_dict_fn=lambda: feed_dict)
+          feed_dict_fn=feed_dict)
     converter.save(trt_saved_model_dir)
     saved_model_dir = trt_saved_model_dir
 

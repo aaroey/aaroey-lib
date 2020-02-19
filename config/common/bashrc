@@ -143,6 +143,9 @@ vimbashrc() {
 vimvimrc() {
   vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc "$@"
 }
+vimultisnips() {
+  vim $AAROEY_LIB_DIR/config/common/ultisnips/* "$@"
+}
 clearscreen() {
   clear && echo -en "\e[3J"
 }
@@ -221,7 +224,34 @@ lfgp()   {
   done
   echo "$out" | xargs grep -H -m $NUM_MATCHES_TO_FIND --color "$1" 2>/dev/null
 }
-psgp()   { ps -AlF | grep --color "^F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD\|$@"; }
+psgp()   {
+  local f=/tmp/psgp-$RANDOM
+  ps -AlF > $f 2>&1
+  grep --color "^F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD\|$@" $f
+}
+psgpkill() {
+  if [[ $# -eq 0 ]]; then
+    echo 'Usage: psgpkill <pattern>'
+    return
+  fi
+  local f=/tmp/psgpkill-$RANDOM
+  ps -AlF > $f 2>&1
+  grep --color $@ $f
+  echo ''
+
+  local pids="$(grep --color $@ $f | sed 's/\t/ /;s/ \+/ /g' | cut -d' ' -f 4)"
+  echo 'PIDs to be killed:'
+  echo "$pids"
+  echo ''
+
+  local answer=y
+  read -p 'Do you want to kill ALL these processes? [y]|n: ' answer
+  if [[ "$answer" == 'y' || "$answer" == '' ]]; then
+    for pid in $pids; do
+      kill -9 $pid
+    done
+  fi
+}
 du0()    { du -d 0 -h $@;                           }
 dutop()  { du -a -h "$@" | sort -r -h | head -n 30; }
 
@@ -310,12 +340,23 @@ ht() {
      | uniq -s 8       \
      | sort            \
      | tail -n $last_n \
-     | sed 's/^[0-9]\+\t*//'
+     | sed 's/^[0-9]\+\t*//' \
+     | grep --color "$@"
 }
-# export PROMPT_COMMAND='history -a; history -r'
-# export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
-export AAROEY_OLD_PROMPT_COMMAND="$PROMPT_COMMAND"
-export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+updateprompt() {
+  # Somehow `exec bash` will reset the PROMPT_COMMAND, not sure why. We can
+  # `set -x` at the end of ~/.bashrc to debug.
+  # Also, embedding this into PS1 doesn't seem to work.
+  # TODO: search for bash startup script in google and fix this.
+  if [[ "$PROMPT_COMMAND" != *'history -a'* ]]; then
+    # export PROMPT_COMMAND='history -a; history -r'
+    # export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+    export AAROEY_OLD_PROMPT_COMMAND="$PROMPT_COMMAND"
+    export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+  fi
+}
+# Short for `updateprompt`.
+up() { updateprompt; }
 uniqbashhistory() {
   local tmpfile=/tmp/bash-history-$RANDOM
   local backupfile=$tmpfile.bak
@@ -347,7 +388,7 @@ export BC_ENV_ARGS=~/.bcrc
 # Vim mode in Bash, see http://blog.sanctum.geek.nz/vi-mode-in-bash/
 set -o vi
 
-export -f sb fgp fgp1 lgp lgp1 psgp du0 ll datelocal datesecond datems dateus datens datetotmpl datetoseconds datetoms datetous datetons datefromtmpl datefromseconds datefromms datefromus datefromns base8to10 base16to10 baseto10 basefrom10 lddclean export_path export_ld_library_path
+export -f sb fgp fgp1 lgp lgp1 psgp psgpkill du0 ll datelocal datesecond datems dateus datens datetotmpl datetoseconds datetoms datetous datetons datefromtmpl datefromseconds datefromms datefromus datefromns base8to10 base16to10 baseto10 basefrom10 lddclean export_path export_ld_library_path
 
 ##################################### git ######################################
 gd() { git diff "$@"; }
@@ -626,8 +667,11 @@ dockerrunsimplewithbash() {
     local cuda_minor=${cuda_minor:-1}
     local cudnn_major=${cudnn_major:-7}
     local cudnn_version_suffix=${cudnn_version_suffix:-5.1.10}
-    local tensorrt_version=${tensorrt_version:-6.0.1}
-    local tag_suffix=cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_version}
+    local cublas_major=${cublas_major:-10}
+    local cublas_version_suffix=${cublas_version_suffix:-1.0.105}
+    local tensorrt_major=${tensorrt_major:-6}
+    local tensorrt_version_suffix=${tensorrt_version_suffix:-0.1}
+    local tag_suffix=cuda${cuda_major}.${cuda_minor}-cudnn${cudnn_major}.${cudnn_version_suffix}-nvinfer${tensorrt_major}.${tensorrt_version_suffix}
     tag=$mydockerrepo:$tag_suffix
 
     local found="$(docker pull $tag)"
@@ -640,7 +684,10 @@ dockerrunsimplewithbash() {
         --build-arg CUDA_MINOR_VERSION=${cuda_minor} \
         --build-arg CUDNN_MAJOR_VERSION=${cudnn_major} \
         --build-arg CUDNN_VERSION_SUFFIX=${cudnn_version_suffix} \
-        --build-arg TENSORRT_VERSION=${tensorrt_version} \
+        --build-arg CUBLAS_MAJOR_VERSION=${cublas_major} \
+        --build-arg CUBLAS_VERSION_SUFFIX=${cublas_version_suffix} \
+        --build-arg TENSORRT_MAJOR_VERSION=${tensorrt_major} \
+        --build-arg TENSORRT_VERSION_SUFFIX=${tensorrt_version_suffix} \
         -f $AAROEY_LIB_DIR/dockerfiles/devel-gpu.Dockerfile ./ \
         && docker push $tag
       popd
@@ -725,8 +772,7 @@ virtualenv_activate() {
     mock ipython recordclass Pillow jupyter numpy scipy \
     selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
     Faker \
-    img2html pandas nltk soundfile sox matplotlib \
-    keras_applications keras_preprocessing tensorflow-serving-api tensorflow-datasets
+    img2html pandas nltk soundfile sox matplotlib
 
   # if [[ $pyver == '3' ]]; then
   #   virtualenv_pip_install $pyver something
@@ -746,7 +792,7 @@ virtualenv_deactivate() {
   # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  local usage='Usage: vadtmpl nightly|nightlyv2|mytfpy3|mytf2py3|cpu|<empty> <workspace>'
+  local usage='Usage: vadtmpl nightly|mytfpy3|mytf2py3|cpu|<empty> <workspace>'
   if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
     echo $usage
     return
@@ -763,12 +809,10 @@ vadtmpl() {
     tfpkg='tensorflow-gpu'
   elif [[ "$tag" == 'nightly' ]]; then
     tfpkg='tf-nightly-gpu'
-  elif [[ "$tag" == 'nightlyv2' ]]; then
-    tfpkg='tf-nightly-gpu-2.0-preview'   # See https://pypi.org/project/tf-nightly-gpu-2.0-preview/#history
   elif [[ "$tag" ]]; then
     dir=$HOME/Workspace/aaroey/$tag
   fi
-  local vedir="$dir/virtualenv_py${pyver}"
+  local vedir="${2:-$dir/virtualenv_py${pyver}}"
   if [[ "$tfpkg" != '' ]]; then
     vedir="$vedir=$tfpkg"
   fi
@@ -780,7 +824,8 @@ vadtmpl() {
   mkdir -p $veworkspace
   pushd $veworkspace
   if [[ "$tfpkg" ]]; then
-    virtualenv_pip_install $pyver $tfpkg
+    virtualenv_pip_install $pyver \
+      $tfpkg keras_applications keras_preprocessing tensorflow-serving-api tensorflow-datasets
   fi
   if [[ "$3" ]]; then
     popd
@@ -796,7 +841,6 @@ vadempty()     { vadtmpl ''        "$@"; }
 vadcpu()       { vadtmpl cpu       "$@"; }
 vad()          { vadtmpl gpu       "$@"; }
 vadnightly()   { vadtmpl nightly   "$@"; }
-vadnightlyv2() { vadtmpl nightlyv2 "$@"; }
 vadmytfpy()    { vadtmpl mytfpy3   "$@"; }
 vadmytf2py()   { vadtmpl mytf2py3  "$@"; }
 
@@ -851,6 +895,7 @@ x_stack_pop() {
   unset x_stack[$size-1]
 }
 set_x() {
+  # Push the current x state onto stack.
   if [[ "$-" == *x* ]]; then
     x_stack_push -x
   else
@@ -859,6 +904,7 @@ set_x() {
   set -x
 }
 unset_x() {
+  # Push the current x state onto stack.
   if [[ "$-" == *x* ]]; then
     x_stack_push -x
   else
@@ -867,6 +913,7 @@ unset_x() {
   set +x
 }
 reset_x() {
+  # Recover the last x state.
   local last_state=$(x_stack_pop)
   set $last_state
 }

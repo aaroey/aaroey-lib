@@ -9,8 +9,8 @@
 #   `$ docker build -t your-image --build-arg CACHEBUST=$(date +%s) .`
 
 ARG UBUNTU_VERSION=16.04
-ARG CUDA_MAJOR_VERSION=9
-ARG CUDA_MINOR_VERSION=0
+ARG CUDA_MAJOR_VERSION=10
+ARG CUDA_MINOR_VERSION=1
 
 FROM nvidia/cuda:${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}-base-ubuntu${UBUNTU_VERSION} as base
 
@@ -23,20 +23,33 @@ ARG CUDA_MINOR_VERSION
 # See https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64/ for the available cudnn and tensorrt versions.
 ARG CUDNN_MAJOR_VERSION=7
 ARG CUDNN_VERSION_SUFFIX=5.0.56
+ARG CUBLAS_MAJOR_VERSION=10
+ARG CUBLAS_VERSION_SUFFIX=1.0.105
+ARG TENSORRT_MAJOR_VERSION=6
+ARG TENSORRT_VERSION_SUFFIX=0.1
 
 # CUDA dependencies
+# TensorRT will be installed in /usr/lib/x86_64-linux-gnu
 RUN apt-get update && apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
+        \
         cuda-command-line-tools-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
-        cuda-cublas-dev-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
         cuda-cudart-dev-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
         cuda-cufft-dev-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
         cuda-curand-dev-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
         cuda-cusolver-dev-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
         cuda-cusparse-dev-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
-        libcudnn7=${CUDNN_MAJOR_VERSION}.${CUDNN_VERSION_SUFFIX}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
-        libcudnn7-dev=${CUDNN_MAJOR_VERSION}.${CUDNN_VERSION_SUFFIX}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
+        \
+        libcudnn${CUDNN_MAJOR_VERSION}=${CUDNN_MAJOR_VERSION}.${CUDNN_VERSION_SUFFIX}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
+        libcudnn${CUDNN_MAJOR_VERSION}-dev=${CUDNN_MAJOR_VERSION}.${CUDNN_VERSION_SUFFIX}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
+        \
+        libcublas${CUBLAS_MAJOR_VERSION}=${CUBLAS_MAJOR_VERSION}.${CUBLAS_VERSION_SUFFIX} \
+        libcublas-dev=${CUBLAS_MAJOR_VERSION}.${CUBLAS_VERSION_SUFFIX} \
+        \
+        libnvinfer${TENSORRT_MAJOR_VERSION}=${TENSORRT_MAJOR_VERSION}.${TENSORRT_VERSION_SUFFIX}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
+        libnvinfer-dev=${TENSORRT_MAJOR_VERSION}.${TENSORRT_VERSION_SUFFIX}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
+        \
         libcurl3-dev \
         libfreetype6-dev \
         libhdf5-serial-dev \
@@ -50,12 +63,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && find /usr/local/cuda-${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete \
     && rm /usr/lib/x86_64-linux-gnu/libcudnn_static_v${CUDNN_MAJOR_VERSION}.a
 
-# TensorRT will be installed in /usr/lib/x86_64-linux-gnu
-ARG TENSORRT_VERSION=5.1.5
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnvinfer5=${TENSORRT_VERSION}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION} \
-    libnvinfer-dev=${TENSORRT_VERSION}-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}
-
 # Configure the build for our CUDA configuration.
 ENV CI_BUILD_PYTHON python
 ENV LD_LIBRARY_PATH=/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH
@@ -65,10 +72,8 @@ ENV TF_CUDA_COMPUTE_CAPABILITIES=7.0
 ENV TF_CUDA_VERSION=${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}
 ENV TF_CUDNN_VERSION=${CUDNN_MAJOR_VERSION}
 
-ARG USE_PYTHON_3_NOT_2=1
-ARG _PY_SUFFIX=${USE_PYTHON_3_NOT_2:+3}
-ARG PYTHON=python${_PY_SUFFIX}
-ARG PIP=pip${_PY_SUFFIX}
+ARG PYTHON=python3
+ARG PIP=pip3
 
 # See http://bugs.python.org/issue19846
 ENV LANG C.UTF-8
@@ -102,9 +107,7 @@ RUN ${PIP} --no-cache-dir install \
         numpy \
         scipy \
         sklearn \
-        pandas \
-    && test "${USE_PYTHON_3_NOT_2}" -eq 1 \
-    && true || ${PIP} --no-cache-dir install enum34
+        pandas
 
 # Install bazel
 ARG BAZEL_VERSION=0.22.0
@@ -114,3 +117,11 @@ RUN mkdir /bazel \
     && chmod +x /bazel/installer.sh \
     && /bazel/installer.sh \
     && rm -f /bazel/installer.sh
+
+# Install gcc-6
+# RUN apt-get update && \
+#       add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
+#       apt-get update && \
+#       apt-get install gcc-6 g++-6 -y && \
+#       update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 && \
+#       gcc -v

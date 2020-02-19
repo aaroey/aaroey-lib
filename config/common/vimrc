@@ -181,9 +181,9 @@ noremap <C-L> <C-W>l
 " Use 119 for the nerd tree.
 noremap ,v :86vs<CR><C-L>
 noremap ,r :vertical resize 86<CR>
-noremap ,sp :set paste<CR>
-noremap ,so :source ~/.vimrc<CR>
-noremap ,snp :set nopaste<CR>
+noremap ,sp :set paste<CR>:set expandtab<CR>
+noremap ,so :source ~/.vimrc<CR>:call UltiSnips#RefreshSnippets()<CR>:set expandtab<CR>
+noremap ,snp :set nopaste<CR>:set expandtab<CR>
 noremap ,do :diffoff<CR>:set foldcolumn=0<CR>:set nocrb<CR>:set noscb<CR>
 noremap ,ds wbyw:r !date -d@<C-R>0 "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>
 noremap ,jc wbi{@code <ESC>ea}<ESC>

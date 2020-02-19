@@ -1,5 +1,15 @@
-snippet "(cc_binary|py_library|java_library)" "binary" brA
-`!p snip.rv = match.group(1)`(
+snippet "(ccb|pyl|javal)" "binary" brA
+`!p
+k = match.group(1)
+if k == 'ccb':
+  snip.rv = 'cc_binary'
+elif k == 'pyl':
+  snip.rv = 'py_library'
+elif k == 'javal':
+  snip.rv = 'java_library'
+else:
+  snip.rv = 'ERROR!!!'
+`(
     name = "$1",
     srcs = ["$2"],
     deps = [
@@ -8,8 +18,8 @@ snippet "(cc_binary|py_library|java_library)" "binary" brA
 )
 endsnippet
 
-snippet "(cc|cuda)_library" "library" brA
-`!p snip.rv = match.group(1)`_library(
+snippet "(cc|cuda)l" "library" brA
+`!p snip.rv = match.group(1)[:-1]`_library(
     name = "$1",
     srcs = ["${3:$1.cc}"],
     hdrs = ["${2:$1.h}"],
