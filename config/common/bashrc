@@ -729,16 +729,22 @@ already_in_virtualenv() {
 OLD_PYTHONPATH=''
 virtualenv_activate() {
   if [[ $# -lt 1 ]] || [[ $# -gt 2 ]]; then
-    echo 'Usage: virtualenv_activate <virtualenv_dir> [<python_version>]]'
+    echo 'Usage: virtualenv_activate <virtualenv_dir> [<install_additional_pkgs>]'
     return
   fi
 
   local vedir="$1"
+  local install_additional_pkgs="${2:-yes}"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
   fi
-  vedir="$(readlink -f $vedir)"
+
+  case "$(uname -s)" in
+      Linux*)  vedir="$(readlink -f $vedir)";;
+      Darwin*) vedir="$(greadlink -f $vedir)";;  # brew install coreutils
+      *)       echo 'Unexpected OS, exiting...'; return;;
+  esac
   if [[ "$VIRTUAL_ENV" == "$vedir" ]]; then
     echo 'Already inside the same virtualenv environment, skipping...'
     return
@@ -748,12 +754,7 @@ virtualenv_activate() {
     return $VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE
   fi
 
-  local pyver="${2:-3}"
-  if [[ "$pyver" != 3 ]] && [[ "$pyver" != 2 ]]; then
-    echo 'python version should be 2 or 3!'
-    return
-  fi
-
+  local pyver=3
   local activate_file="$vedir/bin/activate"
 
   # This is very important! If not using a new dir, when importing modules,
@@ -774,10 +775,13 @@ virtualenv_activate() {
   source "$activate_file"
   # Note @2018/12/06: recordclass, scrapy is not py36 compatible
   virtualenv_pip_install $pyver \
-    mock ipython recordclass Pillow jupyter numpy scipy \
-    selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
-    Faker \
-    img2html pandas nltk soundfile sox matplotlib
+    mock ipython recordclass Pillow jupyter numpy scipy
+  if [[ "$install_additional_pkgs" == 'yes' ]]; then
+    virtualenv_pip_install $pyver \
+      selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
+      Faker \
+      img2html pandas nltk soundfile sox matplotlib
+  fi
 
   # if [[ $pyver == '3' ]]; then
   #   virtualenv_pip_install $pyver something
@@ -822,7 +826,8 @@ vadtmpl() {
     vedir="$vedir=$tfpkg"
   fi
 
-  virtualenv_activate $vedir $pyver
+  local install_additional_pkgs=$([[ "$tag" ]] && echo 'yes' || echo 'no')
+  virtualenv_activate $vedir $install_additional_pkgs
 
   # Change to the working dir first before installing new packages. This is very
   # important!! See comments in virtualenv_activate() for more information.
