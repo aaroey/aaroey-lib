@@ -240,6 +240,10 @@ psgpkill() {
   echo ''
 
   local pids="$(grep --color $@ $f | sed 's/\t/ /;s/ \+/ /g' | cut -d' ' -f 4)"
+  if ! [[ "$pids" ]]; then
+    echo 'No process found!'
+    return
+  fi
   echo 'PIDs to be killed:'
   echo "$pids"
   echo ''
@@ -662,6 +666,7 @@ dockertf() {
 dockerrunsimplewithbash() {
   local mydockerrepo=lam8da/aaroey-env
   local tag=${1:-$mydockerrepo}
+  shift
   if [[ "$tag" == $mydockerrepo ]]; then
     local cuda_major=${cuda_major:-10}
     local cuda_minor=${cuda_minor:-1}
@@ -696,7 +701,7 @@ dockerrunsimplewithbash() {
     docker pull "$tag"
   fi
   # Adding --net=host will change PS1 to **NOT** show the hash.
-  docker_run_with_nvidia "$tag" --rm
+  docker_run_with_nvidia "$tag" "$@" --rm
 }
 
 ################################## virtualenv ##################################
@@ -825,7 +830,10 @@ vadtmpl() {
   pushd $veworkspace
   if [[ "$tfpkg" ]]; then
     virtualenv_pip_install $pyver \
-      $tfpkg keras_applications keras_preprocessing tensorflow-serving-api tensorflow-datasets
+      $tfpkg \
+      keras_applications keras_preprocessing \
+      tensorflow-serving-api tensorflow-datasets \
+      lingvo
   fi
   if [[ "$3" ]]; then
     popd
