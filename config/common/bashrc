@@ -162,10 +162,10 @@ findfileslargerthan() {
   head -n ${3:-20} $largest_fileinfo_output
 }
 # We can add option -l to grep to show only filename instead of matched content
-fgpdir() {
-  # $1 is command (whether to use xargs or not)
-  # $2 directory
-  # $3 is pattern
+grep_file_name_or_content() {
+  # - $1 is '' or 'xargs'. grep file name if '', grep file content if 'xargs'
+  # - $2 directory
+  # - $3 is pattern
   local option_h=''
   if [[ "$1" == xargs ]]; then option_h='-H'; fi
   find -L "$2" -type f | $1 grep $option_h -m $NUM_MATCHES_TO_FIND --color "$3" 2>/dev/null
@@ -177,13 +177,13 @@ grepfile() {
 }
 fgptmpl() {
   case "$#" in
-    0) echo 'Usage: fgptmpl [file_or_dir_1 [file_or_dir_2...]] pattern';;
-    1) fgpdir xargs . "$1";;
-    2) fgpdir xargs "$1" "$2";;
+    0) echo 'Usage: fgp [file_or_dir_1 [file_or_dir_2...]] file_content_pattern';;
+    1) grep_file_name_or_content xargs . "$1";;
+    2) grep_file_name_or_content xargs "$1" "$2";;
     *)
       until [[ $# -eq 1 ]]; do
         if test -d "$1"; then
-          fgpdir xargs "$1" "${!#}"
+          grep_file_name_or_content xargs "$1" "${!#}"
         else
           grepfile "${!#}" "$1"
         fi
@@ -194,8 +194,8 @@ fgptmpl() {
 }
 lgptmpl() {
   case "$#" in
-    1) fgpdir '' . "$1";;
-    2) fgpdir '' "$1" "$2";;
+    1) grep_file_name_or_content '' . "$1";;
+    2) grep_file_name_or_content '' "$1" "$2";;
     *) echo 'Only one or two arguments are accepted!';;
   esac
 }

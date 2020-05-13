@@ -77,6 +77,7 @@ endsnippet
 # #define MYLOGSUFFIX "\033[0m"
 # #define MYLOG(id) LOG(WARNING) << MYLOGPREFIX(#id)
 snippet ,dlogm "#define helper macros for LOG" bA
+
 #define MYLOGPREFIX "\033[1m\033[92m"
 #define MYLOGSUFFIX "\033[0m"
 #define MYLOG LOG(WARNING) << MYLOGPREFIX
@@ -87,15 +88,15 @@ snippet ,dlogm "#define helper macros for LOG" bA
 endsnippet
 
 # MYLOG(`!p snip.rv = str(time.time()).split('.')[0][-5:]`) << $0 << MYLOGSUFFIX;
-snippet dlog "LOG" bA
+snippet dw "LOG(WARNING)" bA
 MYLOG << $0 << MYLOGSUFFIX;
 endsnippet
 
-snippet d-log "LOG" bA
+snippet d- "LOG(WARNING)" bA
 MYDASHLOG << $0 << MYLOGSUFFIX;
 endsnippet
 
-snippet dprintf "printf" bA
+snippet dp "printf" bA
 printf(MYLOGPREFIX"$1"MYLOGSUFFIX"\n", $0);
 endsnippet
 

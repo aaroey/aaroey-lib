@@ -13,6 +13,8 @@ endglobal
 # _DB_GREEN = "\033[42m"
 # _DB_YELLOW = "\033[43m"
 snippet ,dlogm "debug log utils" bA
+
+
 _D_END = "\033[0m"
 _D_BOLD = "\033[1m"
 _DF_RED = "\033[91m"
@@ -20,19 +22,37 @@ _DF_GREEN = "\033[92m"
 _DB_BLUE = "\033[44m"
 _DB_END = "\033[49m"
 
+
 def dcallinfo(frame=2, color=_DF_GREEN):
   from inspect import getframeinfo, stack
+  import re
+  if frame < 0:
+    stack = stack()
+    res = "======== Stack trace:\n"
+    for frame in stack:
+      caller = getframeinfo(frame[0])
+      res += "%s:%s\n" % (re.sub(r".*google./", "",
+                                 caller.filename), caller.lineno)
+    return res + "> " + color
   caller = getframeinfo(stack()[frame][0])
-  return "%s%s%s:%s%s%s > " % (_D_BOLD, _DB_BLUE, caller.filename.split("/")[-1], caller.lineno, _DB_END, color)
+  return "%s%s%s:%s%s%s > " % (_D_BOLD, _DB_BLUE,
+                               caller.filename.split("/")[-1], caller.lineno,
+                               _DB_END, color)
+
 
 def dprint(*args, frame=2):
   print(dcallinfo(frame=frame), *args, _D_END)
 
+
 def dwarn(msg, *args, frame=2, **kwargs):
-  logging.warning(dcallinfo(frame=frame) + msg + _D_END, *args, **kwargs)
+  tf.logging.warning(dcallinfo(frame=frame) + msg + _D_END, *args, **kwargs)
+  tf.logging.flush()
+
 
 def derr(msg, *args, frame=2, **kwargs):
-  logging.warning(dcallinfo(frame=frame, color=_DF_RED) + msg + _D_END, *args, **kwargs)
+  tf.logging.warning(
+      dcallinfo(frame=frame, color=_DF_RED) + msg + _D_END, *args, **kwargs)
+  tf.logging.flush()
 endsnippet
 
 snippet dw "logging.warn" bA
@@ -62,6 +82,10 @@ endsnippet
 
 snippet ,stack "print current stacktrace" bA
 import traceback; traceback.print_stack()
+endsnippet
+
+snippet ,ithstack "print the ith stacktrace" bA
+import traceback; print(traceback.extract_stack(limit=$0)[0])
 endsnippet
 
 snippet ,wg "write current tf graph" bA

@@ -6,14 +6,12 @@ esac
 endsnippet
 
 snippet "if "  "if statement" brA
-if [[ $1 ]]; then
-  $0
+if [[ $0 ]]; then
 fi
 endsnippet
 
 snippet "for " "for statement" brA
-for ${1:i} in $2; do
-  $0
+for ${1:i} in $0; do
 done
 endsnippet
 
@@ -21,4 +19,8 @@ snippet "\) {" "Curly brackets" irA
 ) {
   $0
 }
+endsnippet
+
+snippet "((# *)?todo)" "TODO" brA
+# TODO(laigd): 
 endsnippet
