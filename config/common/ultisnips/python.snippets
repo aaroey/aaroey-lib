@@ -6,8 +6,8 @@ endglobal
 # codes.
 #
 # _D_BOLD_END = "\033[21m"
-# _DF_YELLOW = "\033[93m"
 # _DF_BLUE = "\033[94m"
+# _DF_YELLOW = "\033[93m"
 # _DF_END = "\033[39m"
 # _DB_RED = "\033[41m"
 # _DB_GREEN = "\033[42m"
@@ -17,8 +17,8 @@ snippet ,dlogm "debug log utils" bA
 
 _D_END = "\033[0m"
 _D_BOLD = "\033[1m"
-_DF_RED = "\033[91m"
 _DF_GREEN = "\033[92m"
+_DF_RED = "\033[91m"
 _DB_BLUE = "\033[44m"
 _DB_END = "\033[49m"
 
@@ -40,19 +40,21 @@ def dcallinfo(frame=2, color=_DF_GREEN):
                                _DB_END, color)
 
 
-def dprint(*args, frame=2):
-  print(dcallinfo(frame=frame), *args, _D_END)
+def dprint(*args, **kwargs):
+  print(
+      dcallinfo(frame=kwargs.pop('frame', 2)),
+      # In python 2.x print is not a function and does not accept unpacked list
+      # as argument.
+      ' '.join(map(str, list(args) + [_D_END])))
 
 
-def dwarn(msg, *args, frame=2, **kwargs):
-  tf.logging.warning(dcallinfo(frame=frame) + msg + _D_END, *args, **kwargs)
-  tf.logging.flush()
-
-
-def derr(msg, *args, frame=2, **kwargs):
-  tf.logging.warning(
-      dcallinfo(frame=frame, color=_DF_RED) + msg + _D_END, *args, **kwargs)
-  tf.logging.flush()
+def dwarn(msg, *args, **kwargs):
+  logging.warning(
+      dcallinfo(
+          frame=kwargs.pop('frame', 2),
+          color=kwargs.pop('color', _DF_GREEN)) + msg + _D_END,
+      *args,
+      **kwargs)
 endsnippet
 
 snippet dw "logging.warn" bA
@@ -60,11 +62,27 @@ dwarn(${1:str($0)})
 endsnippet
 
 snippet dr "logging.warn" bA
-derr(${1:str($0)})
+dwarn(${1:str($0)}, color=_DF_RED)
 endsnippet
 
 snippet d- "logging.warn" bA
 dwarn(("-" * 50) + ${1:str($0)})
+endsnippet
+
+snippet rlog "red logging.warn" bA
+tf.logging.warning('\033[91m=> %s\033[0m', ${1:str($0)})
+endsnippet
+
+snippet glog "green logging.warn" bA
+tf.logging.warning('\033[92m=> %s\033[0m', ${1:str($0)})
+endsnippet
+
+snippet ylog "yellow logging.warn" bA
+tf.logging.warning('\033[93m=> %s\033[0m', ${1:str($0)})
+endsnippet
+
+snippet blog "blue logging.warn" bA
+tf.logging.warning('\033[94m=> %s\033[0m', ${1:str($0)})
 endsnippet
 
 # dprint(`!p snip.rv = '1' + str(time.time()).split('.')[0][-5:]`, $0)
@@ -72,7 +90,7 @@ snippet dp "debug print" bA
 dprint($0)
 endsnippet
 
-snippet "((# *)?todo)" "TODO" brA
+snippet "((# *)?todo)" "TODO" rA
 # TODO(laigd): 
 endsnippet
 
@@ -81,7 +99,7 @@ import pdb; pdb.set_trace()
 endsnippet
 
 snippet ,stack "print current stacktrace" bA
-import traceback; traceback.print_stack()
+import traceback; tf.logging.warning('\033[91m=> %s\033[0m', ''.join(traceback.format_stack()))
 endsnippet
 
 snippet ,ithstack "print the ith stacktrace" bA

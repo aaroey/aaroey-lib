@@ -137,18 +137,11 @@ export EDITOR='vim'  # use 'gvim -f' if you want to use GUI vim.
 NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
 
 sb() { exec bash; }
-vimbashrc() {
-  vim ~/.bashrc $AAROEY_LIB_DIR/config/common/bashrc "$@"
-}
-vimvimrc() {
-  vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc "$@"
-}
-vimultisnips() {
-  vim $AAROEY_LIB_DIR/config/common/ultisnips/* "$@"
-}
-clearscreen() {
-  clear && echo -en "\e[3J"
-}
+vimbashrc() { vim ~/.bashrc $AAROEY_LIB_DIR/config/common/bashrc "$@"; }
+vimvimrc() { vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc "$@"; }
+vimultisnips() { vim $AAROEY_LIB_DIR/config/common/ultisnips/* "$@"; }
+clearscreen() { clear && echo -en "\e[3J"; }
+cls() { clearscreen; }
 findfileslargerthan() {
   local filename_output=$(mktemp /tmp/XXXXXX)
   local largest_fileinfo_output=$(mktemp /tmp/XXXXXX)
@@ -177,7 +170,7 @@ grepfile() {
 }
 fgptmpl() {
   case "$#" in
-    0) echo 'Usage: fgp [file_or_dir_1 [file_or_dir_2...]] file_content_pattern';;
+    0) echo 'Usage: fgp [<file_or_dir>...] <file_content_pattern>';;
     1) grep_file_name_or_content xargs . "$1";;
     2) grep_file_name_or_content xargs "$1" "$2";;
     *)
@@ -196,12 +189,16 @@ lgptmpl() {
   case "$#" in
     1) grep_file_name_or_content '' . "$1";;
     2) grep_file_name_or_content '' "$1" "$2";;
-    *) echo 'Only one or two arguments are accepted!';;
+    *) echo 'Usage: lgp [<directory>] <file_name_pattern>';;
   esac
 }
 lgpltemp() {
   # lgp + ls
-  lgptmpl "$@" | xargs ls -alhF | grep "$@" --color
+  if [[ "$#" -ne 1 ]]; then
+    echo 'Usage: lgp1 (or lgpl) <file_name_pattern>'
+    return
+  fi
+  lgptmpl "$@" | xargs readlink -f | xargs ls -alhF | grep "$@" --color
 }
 fgp()    { NUM_MATCHES_TO_FIND=10000; fgptmpl "$@"; }
 fgp1()   { NUM_MATCHES_TO_FIND=1;     fgptmpl "$@"; }
@@ -213,7 +210,7 @@ lfgp()   {
   case "$#" in
     0) ;&
     1)
-      echo 'Usage: lfgp file_name_pattern_1 [file_name_pattern_2 ...] file_content_pattern'
+      echo 'Usage: lfgp <file_name_pattern>[...] <file_content_pattern>'
       echo 'Note that to match special characters like "-" or "*" we need the antislash.'
       return;;
   esac
@@ -249,8 +246,8 @@ psgpkill() {
   echo ''
 
   local answer=y
-  read -p 'Do you want to kill ALL these processes? [y]|n: ' answer
-  if [[ "$answer" == 'y' || "$answer" == '' ]]; then
+  read -p 'Do you want to kill ALL these processes? y|[n]: ' answer
+  if [[ "$answer" == 'y' ]]; then
     for pid in $pids; do
       kill -9 $pid
     done
@@ -392,13 +389,13 @@ export BC_ENV_ARGS=~/.bcrc
 # Vim mode in Bash, see http://blog.sanctum.geek.nz/vi-mode-in-bash/
 set -o vi
 
-export -f sb fgp fgp1 lgp lgp1 psgp psgpkill du0 ll datelocal datesecond datems dateus datens datetotmpl datetoseconds datetoms datetous datetons datefromtmpl datefromseconds datefromms datefromus datefromns base8to10 base16to10 baseto10 basefrom10 lddclean export_path export_ld_library_path
+export -f sb clearscreen cls fgp fgp1 lgp lgp1 psgp psgpkill du0 ll datelocal datesecond datems dateus datens datetotmpl datetoseconds datetoms datetous datetons datefromtmpl datefromseconds datefromms datefromus datefromns base8to10 base16to10 baseto10 basefrom10 lddclean export_path export_ld_library_path
 
 ##################################### git ######################################
 gd() { git diff "$@"; }
 gitdiffeditable() {
   if [[ $# -ne 2 ]]; then
-    echo 'Usage: gitdiffeditable version file'
+    echo 'Usage: gitdiffeditable <version> <file>'
     echo 'E.g.:
     gitdiffeditable master~10 my_file
     gitdiffeditable upstream/tensorrt~10 my_file
@@ -729,12 +726,14 @@ already_in_virtualenv() {
 OLD_PYTHONPATH=''
 virtualenv_activate() {
   if [[ $# -lt 1 ]] || [[ $# -gt 2 ]]; then
-    echo 'Usage: virtualenv_activate <virtualenv_dir> [<install_additional_pkgs>]'
+    echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs_option>]'
+    echo '- pkgs_option: specifies which additional pip packages to install in '
+    echo '  the environment. Valid values are: all (default), basic, none.'
     return
   fi
 
   local vedir="$1"
-  local install_additional_pkgs="${2:-yes}"
+  local pkgs_option="${2:-all}"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
@@ -773,10 +772,12 @@ virtualenv_activate() {
   fi
 
   source "$activate_file"
-  # Note @2018/12/06: recordclass, scrapy is not py36 compatible
-  virtualenv_pip_install $pyver \
-    mock ipython recordclass Pillow jupyter numpy scipy
-  if [[ "$install_additional_pkgs" == 'yes' ]]; then
+  if [[ "$pkgs_option" == 'basic' ]] || [[ "$pkgs_option" == 'all' ]]; then
+    # Note @2018/12/06: recordclass, scrapy is not py36 compatible
+    virtualenv_pip_install $pyver \
+      mock ipython recordclass Pillow jupyter numpy scipy
+  fi
+  if [[ "$pkgs_option" == 'all' ]]; then
     virtualenv_pip_install $pyver \
       selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
       Faker \
@@ -826,8 +827,8 @@ vadtmpl() {
     vedir="$vedir=$tfpkg"
   fi
 
-  local install_additional_pkgs=$([[ "$tag" ]] && echo 'yes' || echo 'no')
-  virtualenv_activate $vedir $install_additional_pkgs
+  local pkgs_option=$([[ "$tag" ]] && echo 'all' || echo 'basic')
+  virtualenv_activate $vedir $pkgs_option
 
   # Change to the working dir first before installing new packages. This is very
   # important!! See comments in virtualenv_activate() for more information.

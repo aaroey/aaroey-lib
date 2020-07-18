@@ -28,6 +28,11 @@ int main(int argc, char** argv) {
 }
 endsnippet
 
+snippet #if  "if statement" bA
+#if$0
+#endif
+endsnippet
+
 snippet "if "  "if statement" brA
 if ($0) 
 endsnippet
@@ -39,6 +44,11 @@ endsnippet
 
 snippet "for([a-z_]+) " "for statement with single letter variable" brA
 for (int `!p snip.rv = match.group(1)` = 0; `!p snip.rv = match.group(1)` < $0; ++`!p snip.rv = match.group(1)`) {
+}
+endsnippet
+
+snippet foreach "for each statement" bA
+for (const auto& i : $0) {
 }
 endsnippet
 
@@ -59,6 +69,22 @@ endsnippet
 
 snippet log "LOG" bA
 LOG(${1:ERROR}) << 
+endsnippet
+
+snippet rlog "red logging.warn" bA
+LOG(WARNING) << "\033[91m=> " << $0 << "\033[0m";
+endsnippet
+
+snippet glog "green logging.warn" bA
+LOG(WARNING) << "\033[92m=> " << $0 << "\033[0m";
+endsnippet
+
+snippet ylog "yellow logging.warn" bA
+LOG(WARNING) << "\033[93m=> " << $0 << "\033[0m";
+endsnippet
+
+snippet blog "blue logging.warn" bA
+LOG(WARNING) << "\033[94m=> " << $0 << "\033[0m";
 endsnippet
 
 # See https://misc.flogisoft.com/bash/tip_colors_and_formatting for bash color
@@ -82,9 +108,6 @@ snippet ,dlogm "#define helper macros for LOG" bA
 #define MYLOGSUFFIX "\033[0m"
 #define MYLOG LOG(WARNING) << MYLOGPREFIX
 #define MYDASHLOG MYLOG << "-----------------------------> "
-#ifndef MYDBG
-#define MYDBG 0
-#endif
 endsnippet
 
 # MYLOG(`!p snip.rv = str(time.time()).split('.')[0][-5:]`) << $0 << MYLOGSUFFIX;
@@ -100,18 +123,6 @@ snippet dp "printf" bA
 printf(MYLOGPREFIX"$1"MYLOGSUFFIX"\n", $0);
 endsnippet
 
-snippet ifd "#if MYDBG" bA
-#if MYDBG
-$0
-#endif
-endsnippet
-
-snippet ifnd "#if !MYDBG" bA
-#if !MYDBG
-$0
-#endif
-endsnippet
-
 snippet "class " "class" brA
 class $0 {
  public:
@@ -123,11 +134,11 @@ struct $0 {
 };
 endsnippet
 
-snippet "((// *)?todo)" "TODO" brA
+snippet "((// *)?todo)" "TODO" rA
 // TODO(laigd): 
 endsnippet
 
-snippet inc "#include" bA
+snippet "(inc|#in)" "#include" brA
 #include "$0"
 endsnippet
 
@@ -174,4 +185,9 @@ snippet ,fstream "Example of reading/writing file" iA
 std::ofstream myfile("${1:/tmp/a}");
 myfile << ${0:"something..."};
 myfile.close();
+endsnippet
+
+snippet ,gdb "gdb debug" bA
+#include <csignal>
+std::raise(SIGINT);
 endsnippet
