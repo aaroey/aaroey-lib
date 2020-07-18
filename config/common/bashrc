@@ -958,3 +958,110 @@ runperiodically() {
     $@
   done
 }
+
+# Use ffmpeg to convert mp3 to youtube-compatible video
+ffmpeg_mp3_to_youtube_compatible_avi() {
+  local img="$1"
+  local mp3="$2"
+  local avi="$3"
+  ffmpeg -loop 1 -r 1 -i "$img" -i "$mp3" -c:a copy -shortest "$avi"
+}
+export -f ffmpeg_mp3_to_youtube_compatible_avi
+
+############################## overwrites for Mac ##############################
+if [[ "$(uname -s)" == 'Darwin' ]]; then
+
+  # export PROMPT_COMMAND="$AAROEY_OLD_PROMPT_COMMAND"
+  unset PROMPT_COMMAND
+  # Usage: fgp file1 file2 ... pattern
+  fgp() {
+    if [[ $# -eq 1 ]]; then
+      find . -type f | xargs grep -H --color "$1"
+    else
+      until [[ $# -eq 1 ]]; do
+        if test -d "$1"; then
+          fgp "$1"/* "${!#}"
+        else
+          grep -H --color "${!#}" "$1"
+        fi
+        shift
+      done
+    fi
+  }
+
+  lfgp() { find . -type f | grep "$1" | xargs grep -H --color "$2"; }
+  # Stop after the first match found
+  fgp1() { find . -type f | xargs grep -m 1 --color "$@"; }
+  lgp()  { find . -type f | grep --color $@; }
+  lgp1() { find . -type f | grep $1 | xargs ls -alhF --color 1 | grep $1 --color; }
+  ll()   { ls -alhF --color $@; }
+
+  hist() {
+    cat $HISTFILE | grep "$@" --color
+  }
+  ht() {
+    if [[ $# > 0 ]]; then
+      hist "$@" | tail -n 30
+    else
+      history | tail
+    fi
+  }
+  # print the date which elapses @seconds since epoch: date -r ${seconds}
+  datefromseconds() { date -r "$1"; }
+  # print the seconds since epoch represented by $1
+  # example $1: 11-04-2014_0:0:0
+  datetoseconds() { date -j -f "%m-%d-%Y_%H:%M:%S" "$1" "+%s"; }
+  ll()   { ls -alhG "$@"; }
+  psgp() {
+    echo '  UID   PID  PPID        F CPU PRI NI       SZ    RSS WCHAN     S             ADDR TTY           TIME CMD'
+    ps -Al | grep --color "$@";
+  }
+
+fi  # If on Mac
+
+################################# only in mac ##################################
+if [[ "$(uname -s)" == 'Darwin' ]]; then
+
+  source ~/.git-completion.bash
+  bundle() {
+    # local bin=/usr/local/Cellar/ruby/2.4.2/lib/ruby/gems/2.4.0/gems/bundler-1.15.4/exe/bundle
+    local bin=$(which bundle)
+    $bin "$@"
+  }
+  jekyll() {
+    # local jekyll=/usr/local/Cellar/ruby/2.4.2/lib/ruby/gems/2.4.0/gems/jekyll-3.3.0/exe/jekyll
+    local jekyll=jekyll
+    bundle exec $jekyll "$@"
+  }
+
+  bind 'set completion-ignore-case on'
+  bind 'set match-hidden-files off'
+  bind 'set show-all-if-ambiguous on'
+
+  tedit() {
+    /Applications/TextEdit.app/Contents/MacOS/TextEdit
+  }
+  mybrew() {
+    sudo chown -R $(whoami) /usr/local/bin /usr/local/etc /usr/local/sbin /usr/local/share /usr/local/share/doc
+    brew "$@"
+  }
+  gscompresspdf() {
+    local input="${1}"
+    local output="${2}"
+    # See https://gist.github.com/firstdoit/6390547 for more info:
+    # /screen selects low-resolution output similar to the Acrobat Distiller "Screen Optimized" setting.
+    # /ebook selects medium-resolution output similar to the Acrobat Distiller "eBook" setting.
+    # /printer selects output similar to the Acrobat Distiller "Print Optimized" setting.
+    # /prepress selects output similar to Acrobat Distiller "Prepress Optimized" setting.
+    # /default selects output intended to be useful across a wide variety of uses, possibly at the expense of a larger output file.
+    local pdfsettings="${pdfsettings:-printer}"
+    gs -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dPDFSETTINGS=/$pdfsettings -dCompatibilityLevel=1.4 -sOutputFile="$output" "$input"
+  }
+
+  for path in /Library/TeX/texbin; do
+    if [[ "$PATH" != *"$path"* ]]; then
+      export PATH=$path:$PATH
+    fi
+  done
+
+fi  # If on Mac
