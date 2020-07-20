@@ -46,16 +46,16 @@ Object.freeze(MimeType);
 
 // See more mime types in: http://en.wikipedia.org/wiki/List_of_file_signatures
 function imgMimeType(header4B) {
-  if (header4B == "89504e47") {
+  if (header4B == '89504e47') {
     return MimeType.PNG;
-  } else if (header4B == "47494638") {
+  } else if (header4B == '47494638') {
     return MimeType.GIF;
-  } else if ([ "ffd8ffe0", "ffd8ffe1", "ffd8ffee", "ffd8ffdb" ].includes(
+  } else if ([ 'ffd8ffe0', 'ffd8ffe1', 'ffd8ffee', 'ffd8ffdb' ].includes(
                  header4B)) {
     return MimeType.JPEG;
-  } else if (header4B == "52494646") {
+  } else if (header4B == '52494646') {
     return MimeType.WEBP;
-  } else if (header4B.substring(0, 4) == "424d") {
+  } else if (header4B.substring(0, 4) == '424d') {
     return MimeType.BMP;
   }
   return MimeType.UNKNOWN;
@@ -66,7 +66,7 @@ function imgMimeType(header4B) {
 function selectImageFile(blob) {
   return new Promise((resolve, reject) => {
     // Fast path: check file extension.
-    if (blob.type.includes("image")) {
+    if (blob.type.includes('image')) {
       // Use any type other than UNKNOWN is fine.
       resolve(blob);
       return;
@@ -76,7 +76,7 @@ function selectImageFile(blob) {
     let reader = new FileReader();
     reader.onloadend = function(e) {
       let arr = new Uint8Array(e.target.result);
-      let header = "";
+      let header = '';
       for (let i = 0; i < arr.length; i++) {
         header += arr[i].toString(16);
       }
@@ -91,6 +91,51 @@ function selectImageFile(blob) {
   });
 }
 
+function getSelectedTable() {
+  return document.getElementById('selected_imgs_table');
+}
+
+function newRowWithContent(data) {
+  td = document.createElement('td');
+  td.innerHTML = data;
+  tr = document.createElement('tr');
+  tr.appendChild(td);
+  return tr;
+}
+
+// Show or hide the selected image names.
+function toggleSelectedNamesState() {
+  let div = document.getElementById('selected_imgs_div');
+  let btn = document.getElementById('toggle_selected');
+  let display = div.style.display;
+  if (display == 'none' || display == '') {
+    div.style.display = 'block';
+    btn.innerHTML = 'Hide selected file names';
+  } else {
+    div.style.display = 'none';
+    btn.innerHTML = 'Show selected file names';
+  }
+}
+
+// Add or remove an image from the selected image list.
+function toggleImgSelectionState(img, blob) {
+  const p = blob.webkitRelativePath;
+  let table = getSelectedTable();
+  let hasRow = false;
+  for (r of table.rows) {
+    if (r.firstChild.innerHTML == p) {
+      hasRow = true;
+      table.removeChild(r);
+      img.classList.remove('selected');
+      break;
+    }
+  }
+  if (!hasRow) {
+    img.classList.add('selected');
+    table.appendChild(newRowWithContent(p));
+  }
+}
+
 function handleDir(e) {
   let promises = [];
   for (const f of e.target.files) {
@@ -99,8 +144,8 @@ function handleDir(e) {
   Promise
       .all(promises) // Wait for the resolutions.
       .then(results => {
-        const cols = 3;
-        const width = Math.floor(getWidth() / cols) - 10;
+        const cols = parseInt(document.getElementById('num_columns').value);
+        const width = Math.floor(getWidth() / cols) - 20;
 
         let table = document.getElementById('img_table');
         table.innerHTML = '';
@@ -110,7 +155,7 @@ function handleDir(e) {
           if (f == null) {
             continue;
           }
-          if (i % 3 == 0) {
+          if (i % cols == 0) {
             tr = document.createElement('tr');
             table.appendChild(tr);
           }
@@ -120,6 +165,7 @@ function handleDir(e) {
           // f.webkitRelativePath is based on html dir, so won't work.
           img.src = URL.createObjectURL(f);
           img.width = width;
+          img.onclick = () => { toggleImgSelectionState(img, f); };
 
           let td = document.createElement('td');
           td.appendChild(img);
@@ -136,4 +182,5 @@ function addEventListener(id, eventName, handler) {
 window.onload = function() {
   // addEventListener('input_single', 'change', handleFile)
   addEventListener('input_dir', 'change', handleDir)
+  addEventListener('toggle_selected', 'click', toggleSelectedNamesState)
 };
