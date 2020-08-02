@@ -6,16 +6,14 @@
     <script type="text/javascript" src="main.js" charset="utf-8"></script>
   </head>
   <body>
-    <span>Num Columes: </span>
-    <input type="number" id="num_columns" name="Columns" min="1" max="5" value="3">
-    <input type="file" id="input_dir" webkitdirectory multiple>
-    <button type="button" id="toggle_selected">Show selected file names</button>
-    <br>
-    <!--
-      <input type="file" id="input_single"/>
+    <div id="control_pane" class="control_pane">
+      <span>Num Columes: </span>
+      <input type="number" id="num_columns" name="Columns" min="1" max="5" value="3">
+      <input type="file" id="input_dir" webkitdirectory multiple>
+      <button type="button" id="toggle_selected">Show selected file names</button>
+      <button type="button" id="copy_selected">Copy selected file names</button>
       <br>
-      <canvas width="400" height="300" id="canvas"/>
-    -->
+    </div>
     <table id="img_table"></table>
     <div id="selected_imgs_div" class="selected_imgs_div" style="display: none;">
       <table id="selected_imgs_table"></table>

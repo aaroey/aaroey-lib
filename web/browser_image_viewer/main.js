@@ -96,6 +96,17 @@ function toggleSelectedNamesState() {
   }
 }
 
+function copySelectedNamesToClipboard() {
+  var text = getSelectedTable().innerHTML;
+  text = text.replace(/<\/tr>/g, "\n").replace(/<[^>]+(>|$)/g, "");
+  console.log(text);
+  navigator.clipboard.writeText(text).then(function() {
+      console.log('Successfully copied selected names to clipboard!');
+  }, function(err) {
+      console.error('Failed to copy selected names: ', err);
+  });
+}
+
 // Add or remove an image from the selected image list.
 function toggleImgSelectionState(img, blob) {
   const p = blob.webkitRelativePath;
@@ -167,4 +178,5 @@ function addEventListener(id, eventName, handler) {
 window.onload = function() {
   addEventListener('input_dir', 'change', handleDir)
   addEventListener('toggle_selected', 'click', toggleSelectedNamesState)
+  addEventListener('copy_selected', 'click', copySelectedNamesToClipboard)
 };
