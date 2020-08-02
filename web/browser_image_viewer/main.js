@@ -12,27 +12,6 @@ function getHeight() {
       document.documentElement.clientHeight);
 }
 
-function handleFile(e) {
-  let URL = window.webkitURL || window.URL;
-  let max_width = 400;
-  let max_height = 300;
-  let ctx = document.getElementById('canvas').getContext('2d');
-  let url = URL.createObjectURL(e.target.files[0]);
-  let img = new Image();
-  img.onload = function() {
-    let ratio = 1;
-    if (img.width > max_width) {
-      ratio = max_width / img.width;
-    }
-    if (ratio * img.height > max_height) {
-      ratio = max_height / img.height;
-    }
-    ctx.scale(ratio, ratio);
-    ctx.drawImage(img, 0, 0);
-  };
-  img.src = url;
-}
-
 const MimeType = {
   UNKNOWN : 0,
   JPEG : 1,
@@ -136,6 +115,10 @@ function toggleImgSelectionState(img, blob) {
   }
 }
 
+function fileCmp(lhs, rhs) {
+  return lhs.webkitRelativePath < rhs.webkitRelativePath;
+}
+
 function handleDir(e) {
   let promises = [];
   for (const f of e.target.files) {
@@ -151,7 +134,9 @@ function handleDir(e) {
         table.innerHTML = '';
         let i = 0;
         let tr = null;
-        for (const f of results) {
+        let images = results.filter(function(f) { return f != null; });
+        images = images.sort(fileCmp);
+        for (const f of images) {
           if (f == null) {
             continue;
           }
@@ -180,7 +165,6 @@ function addEventListener(id, eventName, handler) {
 }
 
 window.onload = function() {
-  // addEventListener('input_single', 'change', handleFile)
   addEventListener('input_dir', 'change', handleDir)
   addEventListener('toggle_selected', 'click', toggleSelectedNamesState)
 };
