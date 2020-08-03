@@ -106,10 +106,19 @@ function toggleSelectedNamesState() {
 }
 
 function copySelectedNamesToClipboard() {
-  var text = getSelectedTable().innerHTML;
+  // NOTE: using regex need to unescape the html content which is hard.
+  // var text = getSelectedTable().innerHTML;
   // .replace(/<[^>]+(>|$)/g, "");
-  text = text.replace(/<tr><td>/g, "'");
-  text = text.replace(/<\/td><\/tr>/g, "'\n");
+  // text = text.replace(/<tr><td>/g, "'");
+  // text = text.replace(/<\/td><\/tr>/g, "'\n");
+  let table = getSelectedTable();
+  let text = '';
+  for (r of table.rows) {
+    for (c of r.cells) {
+      if (text.length) text += '\n';
+      text += c.textContent;
+    }
+  }
   navigator.clipboard.writeText(text).then(
       function() {
         console.log('Successfully copied selected names to clipboard!');
@@ -138,7 +147,7 @@ function toggleImgSelectionState(img, blob) {
   let table = getSelectedTable();
   let hasRow = false;
   for (r of table.rows) {
-    if (r.firstChild.innerHTML == p) {
+    if (r.firstChild.textContent == p) {
       hasRow = true;
       table.removeChild(r);
       img.classList.remove('selected');
