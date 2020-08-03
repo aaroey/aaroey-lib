@@ -70,8 +70,17 @@ function selectImageFile(blob) {
   });
 }
 
+function elemById(id) {
+  return document.getElementById(id);
+}
 function getSelectedTable() {
-  return document.getElementById('selected_imgs_table');
+  return elemById('selected_imgs_table');
+}
+function getSelectedCnt() {
+  return elemById('num_selected');
+}
+function getImgTable() {
+  return elemById('img_table');
 }
 
 function newRowWithContent(data) {
@@ -84,8 +93,8 @@ function newRowWithContent(data) {
 
 // Show or hide the selected image names.
 function toggleSelectedNamesState() {
-  let div = document.getElementById('selected_imgs_div');
-  let btn = document.getElementById('toggle_selected');
+  let div = elemById('selected_imgs_div');
+  let btn = elemById('toggle_selected');
   let display = div.style.display;
   if (display == 'none' || display == '') {
     div.style.display = 'block';
@@ -110,11 +119,22 @@ function copySelectedNamesToClipboard() {
       function(err) { console.error('Failed to copy selected names: ', err); });
 }
 
+function clearSelections() {
+  getSelectedCnt().innerHTML = '0';
+  getSelectedTable().innerHTML = '';
+  let table = getImgTable();
+  for (r of table.rows) {
+    for (c of r.cells) {
+      c.firstChild.classList.remove('selected');
+    }
+  }
+}
+
 // Add or remove an image from the selected image list.
 function toggleImgSelectionState(img, blob) {
   const p = blob.webkitRelativePath;
-  let numSelectedElem = document.getElementById("num_selected");
-  let numSelected = parseInt(numSelectedElem.innerHTML);
+  let selectedCntElem = getSelectedCnt();
+  let selectedCnt = parseInt(selectedCntElem.innerHTML);
   let table = getSelectedTable();
   let hasRow = false;
   for (r of table.rows) {
@@ -122,14 +142,14 @@ function toggleImgSelectionState(img, blob) {
       hasRow = true;
       table.removeChild(r);
       img.classList.remove('selected');
-      numSelectedElem.innerHTML = numSelected - 1;
+      selectedCntElem.innerHTML = selectedCnt - 1;
       break;
     }
   }
   if (!hasRow) {
     img.classList.add('selected');
     table.appendChild(newRowWithContent(p));
-    numSelectedElem.innerHTML = numSelected + 1;
+    selectedCntElem.innerHTML = selectedCnt + 1;
   }
 }
 
@@ -145,10 +165,10 @@ function handleDir(e) {
   Promise
       .all(promises) // Wait for the resolutions.
       .then(results => {
-        const cols = parseInt(document.getElementById('num_columns').value);
+        const cols = parseInt(elemById('num_columns').value);
         const width = Math.floor(getWidth() / cols) - 20;
 
-        let table = document.getElementById('img_table');
+        let table = getImgTable();
         table.innerHTML = '';
         let i = 0;
         let tr = null;
@@ -178,7 +198,7 @@ function handleDir(e) {
 }
 
 function addEventListener(id, eventName, handler) {
-  let elem = document.getElementById(id);
+  let elem = elemById(id);
   elem.addEventListener(eventName, handler, false);
 }
 
@@ -186,4 +206,5 @@ window.onload = function() {
   addEventListener('input_dir', 'change', handleDir)
   addEventListener('toggle_selected', 'click', toggleSelectedNamesState)
   addEventListener('copy_selected', 'click', copySelectedNamesToClipboard)
+  addEventListener('clear_selected', 'click', clearSelections)
 };
