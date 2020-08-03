@@ -1039,7 +1039,7 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
   bind 'set show-all-if-ambiguous on'
 
   tedit() {
-    /Applications/TextEdit.app/Contents/MacOS/TextEdit
+    /System/Applications/TextEdit.app/Contents/MacOS/TextEdit $@
   }
   mybrew() {
     sudo chown -R $(whoami) /usr/local/bin /usr/local/etc /usr/local/sbin /usr/local/share /usr/local/share/doc

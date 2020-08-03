@@ -98,18 +98,23 @@ function toggleSelectedNamesState() {
 
 function copySelectedNamesToClipboard() {
   var text = getSelectedTable().innerHTML;
-  text = text.replace(/<\/tr>/g, "\n").replace(/<[^>]+(>|$)/g, "");
-  console.log(text);
-  navigator.clipboard.writeText(text).then(function() {
-      console.log('Successfully copied selected names to clipboard!');
-  }, function(err) {
-      console.error('Failed to copy selected names: ', err);
-  });
+  // .replace(/<[^>]+(>|$)/g, "");
+  text = text.replace(/<tr><td>/g, "'");
+  text = text.replace(/<\/td><\/tr>/g, "'\n");
+  navigator.clipboard.writeText(text).then(
+      function() {
+        console.log('Successfully copied selected names to clipboard!');
+        console.log(
+            'Run `rsync -R <files> <dst>` to copy them over to dst folder.');
+      },
+      function(err) { console.error('Failed to copy selected names: ', err); });
 }
 
 // Add or remove an image from the selected image list.
 function toggleImgSelectionState(img, blob) {
   const p = blob.webkitRelativePath;
+  let numSelectedElem = document.getElementById("num_selected");
+  let numSelected = parseInt(numSelectedElem.innerHTML);
   let table = getSelectedTable();
   let hasRow = false;
   for (r of table.rows) {
@@ -117,12 +122,14 @@ function toggleImgSelectionState(img, blob) {
       hasRow = true;
       table.removeChild(r);
       img.classList.remove('selected');
+      numSelectedElem.innerHTML = numSelected - 1;
       break;
     }
   }
   if (!hasRow) {
     img.classList.add('selected');
     table.appendChild(newRowWithContent(p));
+    numSelectedElem.innerHTML = numSelected + 1;
   }
 }
 
