@@ -1,7 +1,7 @@
 .control_pane {
   background-color: yellow;
   padding: 3px;
-  z-index: 9998;
+  z-index: 9999;
   position: fixed ! important;
   left: 0px;
   top: 0px;
@@ -16,7 +16,7 @@
 .selected_imgs_div {
   background-color: #c7edcc;
   border-color: white;
-  z-index: 9999;
+  z-index: 9998;
   position: fixed ! important;
   right: 0px;
   top: 0px;

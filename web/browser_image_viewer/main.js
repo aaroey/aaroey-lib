@@ -163,7 +163,7 @@ function toggleImgSelectionState(img, blob) {
 }
 
 function fileCmp(lhs, rhs) {
-  return lhs.webkitRelativePath < rhs.webkitRelativePath;
+  return lhs.webkitRelativePath.localeCompare(rhs.webkitRelativePath);
 }
 
 function handleDir(e) {
