@@ -112,7 +112,7 @@ set wildmode=longest,list,full  " Completion modes for wildcard expansion
 set colorcolumn=81
 set wildignorecase              " Ignore case for file/dir completion
 set cursorline
-" set cursorcolumn  " Very hard to read.
+set cursorcolumn
 
 " hi CursorLine   cterm=NONE ctermbg=darkgray ctermfg=NONE "guibg=lightgrey guifg=white
 " hi CursorColumn cterm=NONE ctermbg=darkgray ctermfg=NONE "guibg=lightgrey guifg=white

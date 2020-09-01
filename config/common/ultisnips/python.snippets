@@ -58,36 +58,52 @@ def dwarn(msg, *args, **kwargs):
 endsnippet
 
 snippet dw "logging.warn" bA
-dwarn(${1:str($0)})
+dwarn(str($0))
 endsnippet
 
 snippet dr "logging.warn" bA
-dwarn(${1:str($0)}, color=_DF_RED)
+dwarn(str($0), color=_DF_RED)
 endsnippet
 
 snippet d- "logging.warn" bA
-dwarn(("-" * 50) + ${1:str($0)})
-endsnippet
-
-snippet rlog "red logging.warn" bA
-tf.logging.warning('\033[91m=> %s\033[0m', ${1:str($0)})
-endsnippet
-
-snippet glog "green logging.warn" bA
-tf.logging.warning('\033[92m=> %s\033[0m', ${1:str($0)})
-endsnippet
-
-snippet ylog "yellow logging.warn" bA
-tf.logging.warning('\033[93m=> %s\033[0m', ${1:str($0)})
-endsnippet
-
-snippet blog "blue logging.warn" bA
-tf.logging.warning('\033[94m=> %s\033[0m', ${1:str($0)})
+dwarn(("-" * 50) + str($0))
 endsnippet
 
 # dprint(`!p snip.rv = '1' + str(time.time()).split('.')[0][-5:]`, $0)
 snippet dp "debug print" bA
 dprint($0)
+endsnippet
+
+snippet rlog "red logging.warn" bA
+tf.logging.warning('\033[91m=> %s\033[0m', str($0))
+endsnippet
+
+snippet glog "green logging.warn" bA
+tf.logging.warning('\033[92m=> %s\033[0m', str($0))
+endsnippet
+
+snippet ylog "yellow logging.warn" bA
+tf.logging.warning('\033[93m=> %s\033[0m', str($0))
+endsnippet
+
+snippet blog "blue logging.warn" bA
+tf.logging.warning('\033[94m=> %s\033[0m', str($0))
+endsnippet
+
+snippet rprint "red print" bA
+print('\033[91m=> %s\033[0m' % str($0))
+endsnippet
+
+snippet gprint "green print" bA
+print('\033[92m=> %s\033[0m' % str($0))
+endsnippet
+
+snippet yprint "yellow print" bA
+print('\033[93m=> %s\033[0m' % str($0))
+endsnippet
+
+snippet bprint "blue print" bA
+print('\033[94m=> %s\033[0m' % str($0))
 endsnippet
 
 snippet "((# *)?todo)" "TODO" rA

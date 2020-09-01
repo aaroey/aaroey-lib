@@ -210,7 +210,8 @@ lfgp()   {
   case "$#" in
     0) ;&
     1)
-      echo 'Usage: lfgp <file_name_pattern>[...] <file_content_pattern>'
+      echo 'Find pattern usage in files under ./ that match specific filename pattern.'
+      echo 'Usage: lfgp <file_name_pattern in ./>[...] <file_content_pattern>'
       echo 'Note that to match special characters like "-" or "*" we need the antislash.'
       return;;
   esac
@@ -326,23 +327,27 @@ hist() {
 ht() {
   local last_n=20
   # http://stackoverflow.com/questions/806906/how-do-i-test-if-a-variable-is-a-number-in-bash
-  # if [ "$1" -eq "$1" ] 2>/dev/null; then
   if [[ $1 =~ ^[0-9]+$ ]]; then
     last_n=$1
     shift
   fi
-  if [[ $# -lt 1 ]]; then
+  local pattern="$@"
+  if [[ "$#" -lt 1 ]]; then
+    pattern='.'  # For the grep at the end.
+  fi
+  if [[ "$#" -lt 1 ]]; then
     tail -n $[last_n*20] $HISTFILE | grep -v '^#'
   else
-    grep "$@" $HISTFILE | tail -n $[last_n*20]
-  fi | sed 's/ *$//g'  \
-     | nl -n rz        \
-     | sort -k2 -k1,1r \
-     | uniq -s 8       \
-     | sort            \
-     | tail -n $last_n \
+    grep "$pattern" $HISTFILE | tail -n $[last_n*20]
+  fi | grep -v '^#[0-9]\+$'  \
+     | sed 's/ *$//g'        \
+     | nl -n rz              \
+     | sort -k2 -k1,1r       \
+     | uniq -s 8             \
+     | sort                  \
+     | tail -n $last_n       \
      | sed 's/^[0-9]\+\t*//' \
-     | grep --color "$@"
+     | grep --color "$pattern"
 }
 updateprompt() {
   # Somehow `exec bash` will reset the PROMPT_COMMAND, not sure why. We can
@@ -364,8 +369,54 @@ uniqbashhistory() {
   echo "Backing up $HISTFILE to $backupfile..."
   cp "$HISTFILE" "$backupfile"
   echo "Trimming $HISTFILE..."
-  cat "$HISTFILE" \
-    | nl | sort -k2 -k 1,1nr | uniq -f1 | sort -n | cut -f2 | uniq -w3 \
+  # Old method (for backup & reference purpose).
+  # cat "$HISTFILE" \
+  #   | nl | sort -k2 -k1,1nr | uniq -f1 | sort -n | cut -f2 \
+  #   > $tmpfile
+
+  # New method. See
+  # https://stackoverflow.com/questions/47696425/sort-bash-history-by-timestamp
+  # https://gist.github.com/gzagatti/3bf037d397e6e47e47e81b7fc8293fd4
+  #
+  # /^$/d            # skip blank lines
+  # /^#/N            # append next line to timestamp
+  # /^#/!s/^/#0\n/   # command without timestamp - prefix with #0
+  # s/#//            # remove initial #
+  # y/\n/ /          # convert newline to space
+  #
+  # $!N
+  #    if not in the last line, append the next line of input
+  #    pattern space (no duplicates): line1\nline2
+  #    stdout: null
+  #
+  # /^\(.*\)\n\1$/
+  #    does the pattern space (eg. line1\nline2) contains duplicate lines
+  #    (eg. line1 == line2)?
+  #
+  # /<REGEX>/!P
+  #    if the pattern space does not contain duplicate lines, print the
+  #    pattern space up to \n
+  #        pattern space: line1\nline2
+  #        stdout: line1
+  #    else
+  #        pattern space: line1\nline2
+  #        stdout: null
+  #
+  # D
+  #    delete up to \n and restart the loop with line2
+  #    pattern space when restarting cycle: line2
+  #
+  # sed -n '$!N; /^\(.*\)\n\1$/!P; D' <file>
+
+  # The first sed remove consecutive timestamps
+  # The second sed append the cmd to the timestamp line
+  # The last sed split the timestamp and cmd into separate lines
+  sed -e '$!N; /^\(#\S\+\)\n#\S\+$/!P; D' "$HISTFILE" \
+    | sed -e '/^$/d' -e '/^#/N' -e '/^#/!s/^/#0\n/' -e 's/#//' -e 'y/\n/ /' \
+    | sort -k2 -k1,1r \
+    | uniq -f1 \
+    | sort -n \
+    | sed -e 's/\(\S\+\) /#\1\n/' \
     > $tmpfile
   mv $tmpfile "$HISTFILE"
   echo "Done."
@@ -728,12 +779,12 @@ virtualenv_activate() {
   if [[ $# -lt 1 ]] || [[ $# -gt 2 ]]; then
     echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs_option>]'
     echo '- pkgs_option: specifies which additional pip packages to install in '
-    echo '  the environment. Valid values are: all (default), basic, none.'
+    echo '  the environment. Valid values are: all, basic, none (default).'
     return
   fi
 
   local vedir="$1"
-  local pkgs_option="${2:-all}"
+  local pkgs_option="${2:-none}"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
@@ -802,7 +853,7 @@ virtualenv_deactivate() {
   # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  local usage='Usage: vadtmpl nightly|mytfpy3|mytf2py3|cpu|<empty> <workspace>'
+  local usage='Usage: vadtmpl nightly|cpu|gpu|<empty> <workspace>'
   if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
     echo $usage
     return
@@ -827,18 +878,21 @@ vadtmpl() {
     vedir="$vedir=$tfpkg"
   fi
 
-  local pkgs_option=$([[ "$tag" ]] && echo 'all' || echo 'basic')
+  local pkgs_option='none'
+  if [[ "$pkgs" ]]; then
+    pkgs_option=$([[ "$tag" ]] && echo 'all' || echo 'basic')
+  fi
   virtualenv_activate $vedir $pkgs_option
 
   # Change to the working dir first before installing new packages. This is very
   # important!! See comments in virtualenv_activate() for more information.
   mkdir -p $veworkspace
   pushd $veworkspace
-  if [[ "$tfpkg" ]]; then
+  if [[ "$tfpkg" ]] && [[ "$pkgs_option" != 'none' ]]; then
+    # keras_applications keras_preprocessing \
+    # tensorflow-serving-api tensorflow-datasets \
     virtualenv_pip_install $pyver \
       $tfpkg \
-      keras_applications keras_preprocessing \
-      tensorflow-serving-api tensorflow-datasets \
       lingvo
   fi
   if [[ "$3" ]]; then
@@ -851,12 +905,11 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vadempty()     { vadtmpl ''        "$@"; }
-vadcpu()       { vadtmpl cpu       "$@"; }
-vad()          { vadtmpl gpu       "$@"; }
-vadnightly()   { vadtmpl nightly   "$@"; }
-vadmytfpy()    { vadtmpl mytfpy3   "$@"; }
-vadmytf2py()   { vadtmpl mytf2py3  "$@"; }
+vadempty()   { vadtmpl ''      "$@"; }
+vadcpu()     { vadtmpl cpu     "$@"; }
+vad()        { vadtmpl gpu     "$@"; }
+vadnightly() { vadtmpl nightly "$@"; }
+vadtmp()     { vadtmpl ''      /tmp/$RANDOM; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
