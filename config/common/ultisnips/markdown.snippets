@@ -43,71 +43,71 @@ tags:
 $0
 endsnippet
 
-snippet ,lq "question template" b
+snippet ,q "question template" bA
 > $1
   {: .lambda_question}
 $0
 endsnippet
 
-snippet ,col "color text" i
+snippet ,col "color text" iA
 <span style="color: ${1:blue}">$2</span>$0
 endsnippet
 
-snippet ,dm "display math" i
+snippet ,dm "display math" iA
 $$
 ${1:${VISUAL}}
 $$
 endsnippet
 
-snippet ,m "inline math" i
+snippet ,m "inline math" iA
 $$${1:${VISUAL}}$$$0
 endsnippet
 
-snippet ,beg "begin{} / end{}" i
+snippet ,beg "begin{} / end{}" iA
 \begin{${1:align}}
   $0
 \end{$1}
 endsnippet
 
-snippet ,code "rouge code block" i
+snippet ,code "rouge code block" iA
 {% highlight ${1:c++} linenos %}
 $0
 {% endhighlight %}
 endsnippet
 
-snippet ,a "alpha" i
-\alpha
+snippet ",g([aAbBdDeEgGlLmMoOpPrRsStTxX])" "Greek character" irA
+`!p
+c = match.group(1)
+if c.lower() == 'a':
+  snip.rv = '\%slpha' % c
+elif c.lower() == 'b':
+  snip.rv = '\%seta' % c
+elif c.lower() == 'd':
+  snip.rv = '\%selta' % c
+elif c.lower() == 'e':
+  snip.rv = '\%spsilon' % c
+elif c.lower() == 'g':
+  snip.rv = '\%samma' % c
+elif c.lower() == 'l':
+  snip.rv = '\%sambda' % c
+elif c.lower() == 'm':
+  snip.rv = '\%su' % c
+elif c.lower() == 'o':
+  snip.rv = '\%smega' % c
+elif c.lower() == 'p':
+  snip.rv = '\%shi' % c
+elif c.lower() == 'r':
+  snip.rv = '\%sho' % c
+elif c.lower() == 's':
+  snip.rv = '\%sigma' % c
+elif c.lower() == 't':
+  snip.rv = '\%sheta' % c
+elif c.lower() == 'x':
+  snip.rv = '\%si' % c
+`
 endsnippet
 
-snippet ,b "beta" i
-\beta
-endsnippet
-
-snippet ,del "delta" i
-\delta
-endsnippet
-
-snippet ,D "Delta" i
-\Delta
-endsnippet
-
-snippet ,e "epsilon" i
-\epsilon
-endsnippet
-
-snippet ,g "gamma" i
-\gamma
-endsnippet
-
-snippet ,s "sigma" i
-\sigma
-endsnippet
-
-snippet ,S "Sigma" i
-\Sigma
-endsnippet
-
-snippet ,ecl "epsilon-closure" i
+snippet ,ecl "epsilon-closure" iA
 $$\epsilon{-}closure$$
 endsnippet
 
@@ -123,10 +123,9 @@ snippet [ "[]" iA
 [$1]
 endsnippet
 
-# Conflicts with \{
-# snippet { "{}" iA
-# {$1}
-# endsnippet
+snippet "([^\\]|^){" "{}" irA
+`!p snip.rv = match.group(1)`{$1}
+endsnippet
 
 snippet | "||" iA
 \vert $1 \vert
@@ -136,13 +135,13 @@ snippet ... "..." iA
 \cdots
 endsnippet
 
-snippet ,lr{ "left{\right}" i
+snippet ,lr{ "\left{\right}" iA
 \left\\{
   $1
 \right\\}
 endsnippet
 
-snippet ,l{ "left{" i
+snippet ,l{a "\left{array\right." iA
 \left\\{
 \begin{array}{l}
   $1
@@ -150,183 +149,87 @@ snippet ,l{ "left{" i
 \right.
 endsnippet
 
-snippet ,lr< "left<\right>" i
+snippet ,lr< "\left<\right>" iA
 \langle$1\rangle
 endsnippet
 
-snippet ,sum "sum" i
+snippet ,sum "sum" iA
 \sum_{${1}}^{${2:n}}
 endsnippet
 
-snippet ,prod "prod" i
+snippet ,prod "prod" iA
 \prod_{${1}}^{${2:n}}
 endsnippet
 
-snippet ,int "integral" i
+snippet ,int "integral" iA
 \int_{$1}^{$2}
 endsnippet
 
-snippet ,lim "limit" i
+snippet ,lim "limit" iA
 \lim_{${1}\to ${2:\infty}} $0
 endsnippet
 
-snippet ,d "derivative operator" i
+snippet ,d "derivative operator" iA
 \mathrm{d}
 endsnippet
 
-snippet ,dx "dx" i
-\mathrm{d}x
-endsnippet
-
-snippet ,dy "dy" i
-\mathrm{d}y
-endsnippet
-
-snippet ,dz "dz" i
-\mathrm{d}z
-endsnippet
-
-snippet ,p "partial derivative operator" i
+snippet ,pd "partial derivative operator" iA
 \partial
 endsnippet
 
-snippet ,p/ "d/dx" i
-\frac{\partial ${1}}{\partial ${2:x}}$0
+snippet "([^ _])_" "subscript" irA
+`!p snip.rv = match.group(1)`_{$1}
 endsnippet
 
-snippet ,x "x" i
-x_{$1}
+snippet "([^ ])\^" "superscript" irA
+`!p snip.rv = match.group(1)`^{$1}
 endsnippet
 
-snippet ,y "y" i
-y_{$1}
-endsnippet
-
-snippet ,z "z" i
-z_{$1}
-endsnippet
-
-snippet ,xy "(x,y)" i
-(x$1,y$1)
-endsnippet
-
-snippet ,xyz "(x,y,z)" i
-(x$1,y$1,z$1)
-endsnippet
-
-snippet ,fxy "f(x,y)" i
-f(x$1,y$1)
-endsnippet
-
-snippet ,fxyz "f(x,y,z)" i
-f(x$1,y$1,z$1)
-endsnippet
-
-snippet ,> "right arrow" i
+snippet ,> "right arrow" iA
 \to
 endsnippet
 
-snippet ,< "left arrow" i
+snippet ,< "left arrow" iA
 \leftarrow
 endsnippet
 
-snippet ,ol "over line" i
+snippet ,ol "over line" iA
 \overline{$1}
 endsnippet
 
-snippet ,o> "over right arrow" i
+snippet ,o> "over right arrow" iA
 \overrightarrow{$1}
 endsnippet
 
-snippet ,o< "over left arrow" i
+snippet ,o< "over left arrow" iA
 \overleftarrow{$1}
 endsnippet
 
-snippet ,>> "implies" i
+snippet ,=> "implies" iA
 \implies $0
 endsnippet
 
-snippet ,<< "implied by" i
+snippet ,=< "implied by" iA
 \impliedby $0
 endsnippet
 
-snippet ,/ "fraction" i
-\frac{$1}{$2}$0
+snippet ,/ "fraction" iA
+\frac{$1}{$2}
 endsnippet
 
-snippet ^ "superscript" i
-^{$1}$0
-endsnippet
-
-snippet _ "subscript" i
-_{$1}$0
-endsnippet
-
-snippet ,img "insert image" i
+snippet ,img "insert image" iA
 ![$1]({{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`)
 endsnippet
 
 # Breaking <img ...> into multiple lines won't work.
-snippet ,imgl "insert image aligned on the left" i
+snippet ,aimg "insert image aligned on the left" iA
 <img src="{{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`" alt="$1" style="margin: 4px; max-width: 5500px">
 endsnippet
 
-snippet ,tbf "bold texts" i
+snippet ,tbf "bold texts" iA
 \textbf{$1}
 endsnippet
 
-snippet ,mbf "bold math symbol" i
-\mathbf{$1}
-endsnippet
-
-snippet ,mcal "\mathcal{}" i
-\mathcal{$1}
-endsnippet
-
-snippet ,mbb "\mathbb{}" i
-\mathbb{$1}
-endsnippet
-
-snippet ,mfrak "\mathfrak{}" i
-\mathfrak{$1}
-endsnippet
-
-snippet ,mscr "\mathscr{}" i
-\mathscr{$1}
-endsnippet
-
-snippet ,msf "\mathsf{}" i
-\mathsf{$1}
-endsnippet
-
-snippet ,mtt "\mathtt{}" i
-\mathtt{$1}
-endsnippet
-
-snippet ,va "\mathbf{a}" i
-\mathbf{a}
-endsnippet
-
-snippet ,vb "\mathbf{b}" i
-\mathbf{b}
-endsnippet
-
-snippet ,vc "\mathbf{c}" i
-\mathbf{c}
-endsnippet
-
-snippet ,vv "\mathbf{v}" i
-\mathbf{v}
-endsnippet
-
-snippet ,vx "\mathbf{x}" i
-\mathbf{x}
-endsnippet
-
-snippet ,vy "\mathbf{y}" i
-\mathbf{y}
-endsnippet
-
-snippet ,vz "\mathbf{z}" i
-\mathbf{z}
+snippet "\\m(bf|cal|bb|frak|scr|sf|tt)" "bold math symbol" irA
+\math`!p snip.rv = match.group(1)`{$1}
 endsnippet
