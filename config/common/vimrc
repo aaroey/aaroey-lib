@@ -179,7 +179,7 @@ noremap <C-H> <C-W>h
 noremap <C-L> <C-W>l
 
 " Use 119 for the nerd tree.
-noremap ,v :86vs<CR><C-L>
+noremap ,v :85vs<CR><C-L>
 noremap ,r :vertical resize 86<CR>
 noremap ,sp :set paste<CR>:set expandtab<CR>
 noremap ,so :source ~/.vimrc<CR>:call UltiSnips#RefreshSnippets()<CR>:set expandtab<CR>

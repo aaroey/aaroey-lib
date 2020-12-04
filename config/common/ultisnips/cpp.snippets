@@ -1,5 +1,16 @@
 global !p
 import time
+
+def color_code(color):
+  if color == 'r':
+    return '91'
+  elif color == 'g':
+    return '92'
+  elif color == 'y':
+    return '93'
+  elif color == 'b':
+    return '94'
+
 endglobal
 
 snippet ,main "main function" bA
@@ -71,20 +82,15 @@ snippet log "LOG" bA
 LOG(${1:ERROR}) << 
 endsnippet
 
-snippet rlog "red logging.warn" bA
-LOG(WARNING) << "\033[91m=> " << $0 << "\033[0m";
-endsnippet
-
-snippet glog "green logging.warn" bA
-LOG(WARNING) << "\033[92m=> " << $0 << "\033[0m";
-endsnippet
-
-snippet ylog "yellow logging.warn" bA
-LOG(WARNING) << "\033[93m=> " << $0 << "\033[0m";
-endsnippet
-
-snippet blog "blue logging.warn" bA
-LOG(WARNING) << "\033[94m=> " << $0 << "\033[0m";
+snippet "([rgyb])(-)?log" "colorful LOG(WARNING)" brA
+LOG(WARNING) << "\033[`!p
+snip.rv = color_code(match.group(1))
+`m`!p
+if match.group(2) == '-':
+  snip.rv = '==============================================='
+else:
+  snip.rv = '='
+`> " << $0 << "\033[0m";
 endsnippet
 
 # See https://misc.flogisoft.com/bash/tip_colors_and_formatting for bash color

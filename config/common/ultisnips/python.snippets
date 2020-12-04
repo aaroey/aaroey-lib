@@ -1,5 +1,16 @@
 global !p
 import time
+
+def color_code(color):
+  if color == 'r':
+    return '91'
+  elif color == 'g':
+    return '92'
+  elif color == 'y':
+    return '93'
+  elif color == 'b':
+    return '94'
+
 endglobal
 
 # See https://misc.flogisoft.com/bash/tip_colors_and_formatting for bash color
@@ -74,36 +85,26 @@ snippet dp "debug print" bA
 dprint($0)
 endsnippet
 
-snippet rlog "red logging.warn" bA
-tf.logging.warning('\033[91m=> %s\033[0m', str($0))
+snippet "([rgyb])(-)?log" "colorful logging.warn" brA
+tf.logging.warning('\033[`!p
+snip.rv = color_code(match.group(1))
+`m`!p
+if match.group(2) == '-':
+  snip.rv = "' + ('=' * 50) + '"
+else:
+  snip.rv = '='
+`> %s\033[0m', str($0))
 endsnippet
 
-snippet glog "green logging.warn" bA
-tf.logging.warning('\033[92m=> %s\033[0m', str($0))
-endsnippet
-
-snippet ylog "yellow logging.warn" bA
-tf.logging.warning('\033[93m=> %s\033[0m', str($0))
-endsnippet
-
-snippet blog "blue logging.warn" bA
-tf.logging.warning('\033[94m=> %s\033[0m', str($0))
-endsnippet
-
-snippet rprint "red print" bA
-print('\033[91m=> %s\033[0m' % str($0))
-endsnippet
-
-snippet gprint "green print" bA
-print('\033[92m=> %s\033[0m' % str($0))
-endsnippet
-
-snippet yprint "yellow print" bA
-print('\033[93m=> %s\033[0m' % str($0))
-endsnippet
-
-snippet bprint "blue print" bA
-print('\033[94m=> %s\033[0m' % str($0))
+snippet "([rgyb])(-)?p" "colorful print" brA
+print('\033[`!p
+snip.rv = color_code(match.group(1))
+`m`!p
+if match.group(2) == '-':
+  snip.rv = "' + ('=' * 50) + '"
+else:
+  snip.rv = '='
+`> %s\\033[0m' % str($0))
 endsnippet
 
 snippet "((# *)?todo)" "TODO" rA
@@ -111,7 +112,7 @@ snippet "((# *)?todo)" "TODO" rA
 endsnippet
 
 snippet ,pdb "pdb debug" bA
-import pdb; pdb.set_trace()
+import pdb; pdb.set_trace(); print(1)
 endsnippet
 
 snippet ,stack "print current stacktrace" bA
@@ -136,7 +137,7 @@ snippet ,sl "sleep" bA
 import time; time.sleep($1);
 endsnippet
 
-snippet ,wr "write to file" bA
+snippet ,wf "write to file" bA
 with open('/tmp/$1', 'w') as f:
   f.write(str($2))
 endsnippet
@@ -147,6 +148,8 @@ endsnippet
 
 snippet ,itf "import tensorflow" bA
 import tensorflow as tf
+tf = tf.compat.v1
+tf.disable_eager_execution()
 endsnippet
 
 snippet ,itrt "import trt_convert" bA
@@ -155,198 +158,4 @@ endsnippet
 
 snippet ,tfwg "write tf graph" bA
 tf.compat.v1.train.write_graph(tf.compat.v1.get_default_graph(), ${1:'/tmp/'}, ${2:'mygraph.pbtxt'}, as_text=True)
-endsnippet
-
-snippet ,trtossv1 "TF-TRT conversion example for open-source for TF v1.x" bA
-from PIL import Image
-import io
-import requests
-import tempfile
-import numpy as np
-import tensorflow as tf
-from tensorflow.core.framework import types_pb2
-from tensorflow.python.compiler.tensorrt import trt_convert as trt
-from tensorflow.python.saved_model import loader
-from tensorflow.python.saved_model import loader_impl
-from tensorflow.python.saved_model import signature_constants
-from tensorflow.python.saved_model import tag_constants
-
-_DEFAULT_INPUT_ALTERNATIVE_FORMAT = 'default_input_alternative:{}'
-
-
-def _get_meta_graph_def(saved_model_dir, tags=None):
-  saved_model_proto = loader_impl.parse_saved_model(saved_model_dir)
-  tags = tags or tag_constants.SERVING
-  set_of_tags = set([tag.strip() for tag in tags.split(',')])
-  for meta_graph_def in saved_model_proto.meta_graphs:
-    if set(meta_graph_def.meta_info_def.tags) == set_of_tags:
-      return meta_graph_def
-  raise ValueError('Could not find MetaGraphDef with tags {}'.format(tags))
-
-
-def _get_signature_def(saved_model_dir, signature_def_key=None, tags=None):
-  signature_def_key = (
-      signature_def_key or
-      signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
-  metagraph_def = _get_meta_graph_def(saved_model_dir, tags)
-
-  try:
-    signature_def = metagraph_def.signature_def[signature_def_key]
-  except KeyError as e:
-    formatted_key = _DEFAULT_INPUT_ALTERNATIVE_FORMAT.format(signature_def_key)
-    try:
-      signature_def = metagraph_def.signature_def[formatted_key]
-    except KeyError:
-      raise ValueError(
-          'Got signature_def_key "{}". Available signatures are {}. '
-          'Original error:\n{}'.format(signature_def_key,
-                                       list(metagraph_def.signature_def), e))
-    logging.warning('Could not find signature def "%s". '
-                    'Using "%s" instead', signature_def_key, formatted_key)
-  return signature_def
-
-
-def _get_saved_model_feeds_and_fetches(saved_model_dir,
-                                       tags=None,
-                                       signature_def_key=None):
-  signature_def = _get_signature_def(saved_model_dir, signature_def_key, tags)
-  return dict(signature_def.inputs), dict(signature_def.outputs)
-
-
-def _get_feed_dict_and_fetches(saved_model_dir, tags=None):
-  inputs, outputs = _get_saved_model_feeds_and_fetches(saved_model_dir, tags)
-  fetches = {k: v.name for k, v in outputs.items()}
-
-  feed_dict = {}
-  for k, v in inputs.items():
-    shape = [1, 2]
-    if v.HasField('tensor_shape'):
-      shape = tf.TensorShape(v.tensor_shape).as_list()
-      shape = list(map(d if d else 1, shape))
-    if v.dtype == types_pb2.DT_STRING:
-      url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
-      img_bytes = requests.get(url).content
-      if False:  # Need to resize?
-        img = Image.open(io.BytesIO(img_bytes))
-        # img = img.resize((100, 100), Image.ANTIALIAS)
-        b = io.BytesIO()
-        img.save(b, 'JPEG')
-        img_bytes = b.getvalue()
-      feed_dict[v.name] = np.reshape(img_bytes, shape)
-    else:
-      feed_dict[v.name] = np.random.random_sample(shape).astype(
-          tf.DType(v.dtype).as_numpy_dtype)
-  return feed_dict, fetches
-
-
-def run():
-  saved_model_dir = '${1:/path/to/saved/model}'
-  tags = 'serve'
-  trt_precision_mode = '${2:FP16}'
-  feed_dict, fetches = _get_feed_dict_and_fetches(saved_model_dir, tags=tags)
-
-  config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-  if trt_precision_mode:
-    trt_saved_model_dir = tempfile.mkdtemp()
-    converter = trt.TrtGraphConverter(
-        input_saved_model_dir=saved_model_dir,
-        input_saved_model_tags=tags.split(','),
-        session_config=config,
-        max_workspace_size_bytes=1 << 30,
-        precision_mode=trt_precision_mode,
-        is_dynamic_op=True)
-    converter.convert()
-    if trt_precision_mode == 'INT8':
-      converter.calibrate(
-          fetch_names=list(fetches.values()),
-          num_runs=1,
-          feed_dict_fn=feed_dict)
-    converter.save(trt_saved_model_dir)
-    saved_model_dir = trt_saved_model_dir
-
-  g = tf.Graph()
-  with g.as_default():
-    s = tf.Session(config=config)
-    loader.load(s, tags.split(','), saved_model_dir)
-    r = s.run(fetches, feed_dict=feed_dict)
-    print(r)
-
-
-run()
-endsnippet
-
-snippet ,trtossv2 "TF-TRT conversion example for open-source for TF v2.0" bA
-import datetime
-import numpy as np
-import requests
-import tempfile
-import tensorflow as tf
-from tensorflow.python.compiler.tensorrt import trt_convert as trt
-
-def get_input_fp(shape):
-  inp = np.random.random_sample(shape).astype(np.float32)
-  inp_fp = tf.constant(inp)
-  return inp_fp
-
-def get_input_img(shape):
-  url = 'https://tensorflow.org/images/blogs/serving/cat.jpg'
-  inp_img = requests.get(url).content
-  if False:  # Need to resize?
-    img = Image.open(io.BytesIO(inp_img))
-    # img = img.resize((100, 100), Image.ANTIALIAS)
-    b = io.BytesIO()
-    img.save(b, 'JPEG')
-    inp_img = b.getvalue()
-  inp_img = np.reshape(inp_img, (1,))
-  return inp_img
-
-def get_sm(saved_model_dir, trt_precision_mode, inp):
-  if trt_precision_mode:
-    trt_saved_model_dir = tempfile.mkdtemp()
-    params = trt.DEFAULT_TRT_CONVERSION_PARAMS._replace(
-        precision_mode=trt_precision_mode,
-        is_dynamic_op=True)
-    converter = trt.TrtGraphConverterV2(
-        input_saved_model_dir=saved_model_dir,
-        conversion_params=params)
-    if trt_precision_mode == 'INT8':
-      def inp_fn():
-        yield inp
-      converter.convert(calibration_input_fn=inp_fn)
-    else:
-      converter.convert()
-    converter.save(trt_saved_model_dir)
-    saved_model_dir = trt_saved_model_dir
-
-  root = tf.saved_model.load(saved_model_dir)
-  return root
-
-def run(f, inp):
-  r = f(inp)
-  print(r)
-
-def run_and_time(f, inp):
-  # warmup
-  for _ in range(5):
-    f(inp)
-
-  # benchmark
-  NUM_RUNS = 100
-  dt0 = datetime.datetime.now()
-  for _ in range(NUM_RUNS):
-    f(inp)
-  dt1 = datetime.datetime.now()
-  print('precision:', trt_precision_mode, ', time for', NUM_RUNS, 'runs:',
-        dt1 - dt0)
-
-shape = ${3:[1, 224, 224, 3]}
-inp_fp = get_input_fp(shape)
-
-saved_model_dir = '${1:/path/to/saved/model}'
-trt_precision_mode = '${2:FP16}'
-root = get_sm(saved_model_dir, trt_precision_mode, (inp_fp,))
-concrete_func = root.signatures["serving_default"]
-
-run(concrete_func, inp_fp)
-# run_and_time(concrete_func, inp_fp)
 endsnippet

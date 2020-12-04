@@ -353,6 +353,8 @@ updateprompt() {
   # Somehow `exec bash` will reset the PROMPT_COMMAND, not sure why. We can
   # `set -x` at the end of ~/.bashrc to debug.
   # Also, embedding this into PS1 doesn't seem to work.
+  # Currently this is automatically invoked by tmux whenever a new tmux window
+  # is created (through the tmux config).
   # TODO: search for bash startup script in google and fix this.
   if [[ "$PROMPT_COMMAND" != *'history -a'* ]]; then
     # export PROMPT_COMMAND='history -a; history -r'
@@ -631,20 +633,27 @@ tmux_restore() {
   }
 
   tmux start-server
-  local count=0
+  local session_count=0
+  local window_count=0
   local dimensions="$(_terminal_size)"
   while IFS=$'\t' read session_name window_name dir; do
     if [[ -d "$dir" ]]; then
       if _session_exists "$session_name"; then
+        # TODO: why adding a colon after $session_name?
+        # Note: adding the shell command at the end won't work because the shell
+        # will exit after executing the command.
         tmux new-window -d -t "$session_name:" -n "$window_name" -c "$dir"
+        window_count=$(( window_count + 1 ))
       else
         cd "$dir" &&
           tmux new-session -d -s "$session_name" -n "$window_name" $dimensions
-        count=$(( count + 1 ))
+        session_count=$(( session_count + 1 ))
+        window_count=0  # Assuming windows in the same session are listed together.
       fi
+      tmux send-keys -t "$session_name:$window_count" "updateprompt; clear" c-m
     fi
   done < $TMUX_SAVED_SESSION_FILE
-  echo "Restored $count sessions"
+  echo "Restored $session_count sessions"
 }
 get_tmux_window_name() {
   if [[ "$TERM" != "screen"* ]] || [[ "$TMUX" == '' ]]; then
@@ -906,15 +915,15 @@ dav() {
   popd
 }
 vadempty()   { vadtmpl ''      "$@"; }
-vadcpu()     { vadtmpl cpu     "$@"; }
-vad()        { vadtmpl gpu     "$@"; }
+vadgpu()     { vadtmpl gpu     "$@"; }
+vad()        { vadtmpl cpu     "$@"; }
 vadnightly() { vadtmpl nightly "$@"; }
 vadtmp()     { vadtmpl ''      /tmp/$RANDOM; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
 #################################### python ####################################
-ipython() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
+ipythonvi() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
 
 ##################################### misc #####################################
 
