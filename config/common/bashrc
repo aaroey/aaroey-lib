@@ -1120,7 +1120,10 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
     gs -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dPDFSETTINGS=/$pdfsettings -dCompatibilityLevel=1.4 -sOutputFile="$output" "$input"
   }
 
-  for path in /Library/TeX/texbin; do
+  for path in \
+    /Library/TeX/texbin \
+    /usr/local/opt/gnu-sed/libexec/gnubin \
+    ; do
     if [[ "$PATH" != *"$path"* ]]; then
       export PATH=$path:$PATH
     fi

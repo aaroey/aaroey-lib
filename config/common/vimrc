@@ -219,9 +219,10 @@ let g:ctrlp_clear_cache_on_exit = 0
 
 """"""""""""""""""""""""""""""""" For vimtex """""""""""""""""""""""""""""""""""
 
+" Type `\ll` to compile the current .tex file.
 let g:tex_flavor='latex'
 let g:vimtex_view_method='zathura'
-let g:vimtex_quickfix_mode=0
+let g:vimtex_quickfix_mode=1
 " set conceallevel=1
 " let g:tex_conceal='abdmg'
 
@@ -259,7 +260,7 @@ au BufNewFile,BufFilePre,BufRead *.tex set filetype=tex
 let g:UltiSnipsExpandTrigger = '<tab>'
 let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
-let g:UltiSnipsSnippetDirectories = ['ultisnips', 'UltiSnips']
+let g:UltiSnipsSnippetDirectories = ['ultisnips']  ", 'UltiSnips']
 " Reload Ultisnips. Found by :call <C-d>
 noremap ,ru :call UltiSnips#RefreshSnippets()<CR>
 
@@ -436,3 +437,11 @@ endif
 
 """""""""""""""""""""""""""""""""""" Misc """"""""""""""""""""""""""""""""""""""
 " set completeopt=longest,menu  " Auto completion
+
+"""""""""""""""""""""""""""""""""" Mac only """"""""""""""""""""""""""""""""""""
+" Do this instead of system("uname -s") in order to get rid of the newline at
+" the end.
+let s:uname = system("echo -n \"$(uname)\"")
+if s:uname == "Darwin"
+  set backspace=indent,eol,start
+endif
