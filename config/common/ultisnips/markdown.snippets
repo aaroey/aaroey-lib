@@ -49,6 +49,10 @@ snippet ,q "question template" bA
 $0
 endsnippet
 
+snippet ,anc "hyperlink text" iA
+<a name="${1}">$0</a>
+endsnippet
+
 snippet ,col "color text" iA
 <span style="color: ${1:blue}">$2</span>$0
 endsnippet
@@ -123,7 +127,7 @@ snippet [ "[]" iA
 [$1]
 endsnippet
 
-snippet "([^\\]|^){" "{}" irA
+snippet "([^\\r]|^){" "{}" irA
 `!p snip.rv = match.group(1)`{$1}
 endsnippet
 
@@ -221,15 +225,23 @@ snippet ,img "insert image" iA
 ![$1]({{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`)
 endsnippet
 
-# Breaking <img ...> into multiple lines won't work.
+# Note: breaking <img ...> into multiple lines won't work.
 snippet ,aimg "insert image aligned on the left" iA
 <img src="{{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`" alt="$1" style="margin: 4px; max-width: 5500px">
 endsnippet
 
-snippet ,tbf "bold texts" iA
+snippet ",f(bb|bf|cal|frak|scr|sf|tt)" "math fonts" irA
+\math`!p snip.rv = match.group(1)`{$1}
+endsnippet
+
+snippet ,ftx "math fonts" iA
+\text{$1}
+endsnippet
+
+snippet ,ftb "math fonts" iA
 \textbf{$1}
 endsnippet
 
-snippet "\\m(bf|cal|bb|frak|scr|sf|tt)" "bold math symbol" irA
-\math`!p snip.rv = match.group(1)`{$1}
+snippet ,fp "math fonts" iA
+\pmb{$1}
 endsnippet

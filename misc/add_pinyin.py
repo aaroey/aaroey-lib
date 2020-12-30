@@ -3,14 +3,15 @@ import sys
 from pypinyin import constants
 from pypinyin import core
 
-def mylen(words):
+def WordsLen(words):
+  """Byte length of `words`, which is either all hans or all pinyins."""
   if constants.RE_HANS.match(words):
     return len(words) * 2
   return len(words)
 
-def align(h, p):
+def Align(h, p):
   """Align the two lists."""
-  hlen, plen = mylen(h), mylen(p)
+  hlen, plen = WordsLen(h), WordsLen(p)
   if False:
     print('\033[93m=> "%s" : %d\033[0m' % (str(p), plen))
     print('\033[93m=> "%s" : %d\033[0m' % (str(h), hlen))
@@ -32,7 +33,7 @@ def align(h, p):
     print('\033[93m=> "%s" : %d\033[0m' % (str(h), hlen))
   return h, p
 
-def mypinyin(hans, style=core.Style.TONE, heteronym=False, errors='default',
+def MyPinyin(hans, style=core.Style.TONE, heteronym=False, errors='default',
              strict=True, v_to_u=False, neutral_tone_with_five=False):
   pinyin = core.Pinyin(core._mixConverter(
       v_to_u=v_to_u, neutral_tone_with_five=neutral_tone_with_five))
@@ -65,7 +66,7 @@ def mypinyin(hans, style=core.Style.TONE, heteronym=False, errors='default',
   aligned_hans = []
   aligned_pyins = []
   for i in range(len(hans)):
-    h, p = align(hans[i], pyins[i])
+    h, p = Align(hans[i], pyins[i])
     aligned_hans.append(h)
     aligned_pyins.append(p)
 
@@ -106,7 +107,7 @@ def AddPinyin(in_path, out_path):
     with open(in_path, 'r') as in_f:
       cnt = 0
       for l in in_f.readlines():
-        for hans, pyins in mypinyin(l):
+        for hans, pyins in MyPinyin(l):
           if False:
             cnt += 1
             if cnt > 10: return
