@@ -1046,8 +1046,9 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
 
   # export PROMPT_COMMAND="$AAROEY_OLD_PROMPT_COMMAND"
   unset PROMPT_COMMAND
-  # Usage: fgp file1 file2 ... pattern
+
   fgp() {
+    >&2 echo 'Usage: fgp file1 file2 ... pattern'
     if [[ $# -eq 1 ]]; then
       find . -type f | xargs grep -H --color "$1"
     else
@@ -1065,7 +1066,11 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
   lfgp() { find . -type f | grep "$1" | xargs grep -H --color "$2"; }
   # Stop after the first match found
   fgp1() { find . -type f | xargs grep -m 1 --color "$@"; }
-  lgp()  { find . -type f | grep --color $@; }
+  lgp()  {
+    >&2 echo 'Find files with given pattern under current dir ".".'
+    >&2 echo 'Usage: lgp <file_name_pattern>'
+    find . -type f | grep --color $@
+  }
   lgp1() { find . -type f | grep $1 | xargs ls -alhF --color 1 | grep $1 --color; }
   ll()   { ls -alhF --color $@; }
 

@@ -75,6 +75,13 @@ set autoindent
 set autoread
 
 if has('mac')
+  " Disable Cellar scripts. Run :scriptnames to see loaded scripts.
+  " augroup ForbidCellar
+  "   " Clear the autocommand group if the same group is redefined.
+  "   autocmd!
+  "   autocmd SourceCmd */Cellar/* :" Do nothing
+  " augroup END
+
   set clipboard=
 else
   set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
