@@ -435,6 +435,17 @@ export_ld_library_path() {
     export LD_LIBRARY_PATH="$path:$LD_LIBRARY_PATH"
   fi
 }
+diffxxd() {
+  if [[ "$#" -ne 2 ]]; then
+    >&2 echo 'Usage: diffxxd <file1> <file2>'
+    return 1
+  fi
+  local tmp=/tmp/$RANDOM
+  xxd $1 > $tmp-1
+  xxd $2 > $tmp-2
+  diff $tmp-{1,2}
+  >&2 echo "Files: $tmp-1 $tmp-2"
+}
 
 # Config file for bc
 export BC_ENV_ARGS=~/.bcrc

@@ -93,7 +93,7 @@ if match.group(2) == '-':
   snip.rv = "' + ('=' * 50) + '"
 else:
   snip.rv = '='
-`> %s\033[0m', str($0))
+`> %s\033[0m', $0)
 endsnippet
 
 snippet "([rgyb])(-)?p" "colorful print" brA
@@ -104,7 +104,7 @@ if match.group(2) == '-':
   snip.rv = "' + ('=' * 50) + '"
 else:
   snip.rv = '='
-`> %s\\033[0m' % str($0))
+`> %s\\033[0m' % ($0))
 endsnippet
 
 snippet "((# *)?todo)" "TODO" rA

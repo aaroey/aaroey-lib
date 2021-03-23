@@ -1,3 +1,17 @@
+global !p
+
+def color_code(color):
+  if color == 'r':
+    return '91'
+  elif color == 'g':
+    return '92'
+  elif color == 'y':
+    return '93'
+  elif color == 'b':
+    return '94'
+
+endglobal
+
 snippet case "case statement"
 case ${1:word} in
   ${2:pattern})
@@ -23,4 +37,15 @@ endsnippet
 
 snippet "((# *)?todo)" "TODO" brA
 # TODO(laigd): 
+endsnippet
+
+snippet "([rgyb])(-)?log" "colorful echo" brA
+>&2 echo -e "\e[`!p
+snip.rv = color_code(match.group(1))
+`m`!p
+if match.group(2) == '-':
+  snip.rv = '=================================================='
+else:
+  snip.rv = '='
+`> $0 \e[0m"
 endsnippet

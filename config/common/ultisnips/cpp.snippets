@@ -184,10 +184,9 @@ snippet ,scns "std::chrono duration in nanoseconds" iA
 $1 = sc::duration_cast<sc::nanoseconds>(${2:end} - ${0:start}).count();
 endsnippet
 
-snippet ,fstream "Example of reading/writing file" iA
+snippet ,wf "Example of reading/writing file" bA
 #include <iostream>
 #include <fstream>
-
 std::ofstream myfile("${1:/tmp/a}");
 myfile << ${0:"something..."};
 myfile.close();
