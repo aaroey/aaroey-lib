@@ -86,25 +86,41 @@ dprint($0)
 endsnippet
 
 snippet "([rgyb])(-)?log" "colorful logging.warn" brA
-tf.logging.warning('\033[`!p
+tf.logging.warning(f'\033[`!p
 snip.rv = color_code(match.group(1))
 `m`!p
 if match.group(2) == '-':
-  snip.rv = "' + ('=' * 50) + '"
+  snip.rv = "' + ('=' * 50) + f'"
 else:
   snip.rv = '='
-`> %s\033[0m', $0)
+`> $0\033[0m')
 endsnippet
 
 snippet "([rgyb])(-)?p" "colorful print" brA
-print('\033[`!p
+print(f'\033[`!p
 snip.rv = color_code(match.group(1))
 `m`!p
 if match.group(2) == '-':
-  snip.rv = "' + ('=' * 50) + '"
+  snip.rv = "' + ('=' * 50) + f'"
 else:
   snip.rv = '='
-`> %s\\033[0m' % ($0))
+`> $0\\033[0m')
+endsnippet
+
+snippet "((tf.logging|print|f').*){" "{} in print" brA
+`!p snip.rv = match.group(1)`{$1}
+endsnippet
+
+snippet ,{ "{}" iA
+{$1}
+endsnippet
+
+snippet ,( "()" iA
+($1)
+endsnippet
+
+snippet ,[ "[]" iA
+[$1]
 endsnippet
 
 snippet "((# *)?todo)" "TODO" rA
@@ -150,12 +166,4 @@ snippet ,itf "import tensorflow" bA
 import tensorflow as tf
 tf = tf.compat.v1
 tf.disable_eager_execution()
-endsnippet
-
-snippet ,itrt "import trt_convert" bA
-from tensorflow.python.compiler.tensorrt import trt_convert as trt
-endsnippet
-
-snippet ,tfwg "write tf graph" bA
-tf.compat.v1.train.write_graph(tf.compat.v1.get_default_graph(), ${1:'/tmp/'}, ${2:'mygraph.pbtxt'}, as_text=True)
 endsnippet

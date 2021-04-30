@@ -234,10 +234,10 @@ psgpkill() {
   fi
   local f=/tmp/psgpkill-$RANDOM
   ps -AlF > $f 2>&1
-  grep --color $@ $f
+  grep --color "$@" $f
   echo ''
 
-  local pids="$(grep --color $@ $f | sed 's/\t/ /;s/ \+/ /g' | cut -d' ' -f 4)"
+  local pids="$(grep --color "$@" $f | sed 's/\t/ /;s/ \+/ /g' | cut -d' ' -f 4)"
   if ! [[ "$pids" ]]; then
     echo 'No process found!'
     return
@@ -824,7 +824,7 @@ virtualenv_activate() {
     return $VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE
   fi
 
-  local pyver=3
+  local pyver=${pyver:-3}
   local activate_file="$vedir/bin/activate"
 
   # This is very important! If not using a new dir, when importing modules,
@@ -855,7 +855,7 @@ virtualenv_activate() {
       img2html pandas nltk soundfile sox matplotlib
   fi
 
-  # if [[ $pyver == '3' ]]; then
+  # if [[ $pyver == '3'* ]]; then
   #   virtualenv_pip_install $pyver something
   # fi
 
@@ -880,7 +880,7 @@ vadtmpl() {
   fi
   set_x
   local tag=$1
-  local pyver=3
+  local pyver=${pyver:-3}
   local dir=$HOME/tmp
   local veworkspace=$dir/default_virtualenv_workspace
   local tfpkg=''
@@ -934,6 +934,7 @@ vadtmp()     { vadtmpl ''      /tmp/$RANDOM; }
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
 #################################### python ####################################
+# python() { echo 'Be careful, using alias...'; python3 "$@"; }
 ipythonvi() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
 
 ##################################### misc #####################################
