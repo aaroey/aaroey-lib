@@ -934,7 +934,9 @@ vadtmp()     { vadtmpl ''      /tmp/$RANDOM; }
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
 #################################### python ####################################
-# python() { echo 'Be careful, using alias...'; python3 "$@"; }
+# TODO(laigd): virtualenv doesn't work without this, and will remove the
+# python->python3 alias, not sure why.
+python() { echo -e "\e[93mBe careful, using alias...\e[0m"; python3 "$@"; }
 ipythonvi() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
 
 ##################################### misc #####################################
