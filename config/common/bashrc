@@ -683,7 +683,7 @@ cd() {
     echo 'Usage: cd [<dir>]'
     return
   fi
-  builtin cd $1 && get_tmux_window_name
+  builtin cd "$1" && get_tmux_window_name
 }
 
 ################################# nvidia gpu ###################################

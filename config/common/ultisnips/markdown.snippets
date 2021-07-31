@@ -57,7 +57,7 @@ snippet ,col "color text" iA
 <span style="color: ${1:blue}">$2</span>$0
 endsnippet
 
-snippet ,dm "display math" iA
+snippet ,ym "display math" iA
 $$
 ${1:${VISUAL}}
 $$
@@ -115,34 +115,66 @@ snippet ,ecl "epsilon-closure" iA
 $$\epsilon{-}closure$$
 endsnippet
 
+################ Various types of brackets
+
+snippet "(?<!,lr)\(" "(), where the ( is not prefixed with ,lr" irA
+($1)
+endsnippet
+
+snippet "(?<!,lr)\[" "[], where the [ is not prefixed with ,lr" irA
+[$1]
+endsnippet
+
+snippet "(?<!l|r|\\){" "{}, where the { is not prefixed with ,l or ,lr or \" irA
+{$1}
+endsnippet
+
 snippet \{ "\{\}" iA
 \\{$1\\}
 endsnippet
 
-snippet ( "()" iA
-($1)
+snippet <> "<>" iA
+\langle $1\rangle
 endsnippet
 
-snippet [ "[]" iA
-[$1]
+snippet "(?<!,lr)\|1" "|x|, where the |1 is not prefixed with ,lr" irA
+\vert $1\vert
 endsnippet
 
-snippet "([^\\r]|^){" "{}" irA
-`!p snip.rv = match.group(1)`{$1}
+snippet "(?<!,lr)\|2" "||x||, where the |2 is not prefixed with ,lr" irA
+\|$1\|
 endsnippet
 
-snippet | "||" iA
-\vert $1 \vert
+################ Various types of stretchy brackets
+
+snippet ,lr( "\left(\right)" iA
+\left($1\right)
 endsnippet
 
-snippet ... "..." iA
-\cdots
+snippet ,lr[ "\left[\right]" iA
+\left[$1\right]
 endsnippet
 
 snippet ,lr{ "\left{\right}" iA
-\left\\{
-  $1
-\right\\}
+\left\\{$1\right\\}
+endsnippet
+
+snippet ,lr< "\left<\right>" iA
+\left\langle $1\right\rangle
+endsnippet
+
+snippet ,lr|1 "\left|\right|" iA
+\left|$1\right|
+endsnippet
+
+snippet ,lr|2 "\left\|\right\|" iA
+\left\|$1\right\|
+endsnippet
+
+################
+
+snippet ... "..." iA
+\cdots
 endsnippet
 
 snippet ,l{a "\left{array\right." iA
@@ -151,14 +183,6 @@ snippet ,l{a "\left{array\right." iA
   $1
 \end{array}
 \right.
-endsnippet
-
-snippet ,lr< "\left<\right>" iA
-\langle$1\rangle
-endsnippet
-
-snippet ,inn "inner product" iA
-\langle\pmb{$1},\pmb{$2}\rangle
 endsnippet
 
 snippet ,sum "sum" iA
@@ -225,6 +249,8 @@ snippet ,/ "fraction" iA
 \frac{$1}{$2}
 endsnippet
 
+################ Images
+
 snippet ,img "insert image" iA
 ![$1]({{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`)
 endsnippet
@@ -233,6 +259,8 @@ endsnippet
 snippet ,aimg "insert image aligned on the left" iA
 <img src="{{ site.url }}/assets/`!p snip.rv = snip.basename + '/' + t[1] + '.png'`" alt="$1" style="margin: 4px; max-width: 5500px">
 endsnippet
+
+################ Fonts
 
 snippet ",f(bb|bf|cal|frak|scr|sf|tt)" "math fonts" irA
 \math`!p snip.rv = match.group(1)`{$1}
@@ -249,3 +277,23 @@ endsnippet
 snippet ,fp "math fonts" iA
 \pmb{$1}
 endsnippet
+
+################ Vector calculus related
+
+snippet ,vip "inner product" iA
+\langle\pmb{$1},\pmb{$2}\rangle
+endsnippet
+
+snippet ,vnorm "||v||" iA
+\|\pmb{$1}\|
+endsnippet
+
+snippet ,vvals "the scalar values of a vector" iA
+$1_{1},\cdots,$1_{$2}
+endsnippet
+
+snippet ,vlist "a list of vectors" iA
+\pmb{$1}_{1},\cdots,\pmb{$1}_{$2}
+endsnippet
+
+################
