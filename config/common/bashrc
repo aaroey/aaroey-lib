@@ -160,7 +160,10 @@ grep_file_name_or_content() {
   # - $2 directory
   # - $3 is pattern
   if [[ "$1" == xargs ]]; then
-    find -L "$2" -type f | xargs -d '\n' grep -H -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
+    # This is the only way that works for both linux and osx.
+    # - `tr \\n \\0` converts spaces in file names into NUL character.
+    # - `-0` allows xargs to use NUL character as separator.
+    find -L "$2" -type f | tr \\n \\0 | xargs -0 grep -H -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
   else
     find -L "$2" -type f | grep -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
   fi
@@ -200,7 +203,7 @@ lgpltemp() {
     echo 'Usage: lgp1 (or lgpl) <file_name_pattern>'
     return
   fi
-  lgptmpl "$@" | xargs readlink -f | xargs ls -alhF | grep "$@" --color
+  lgptmpl "$@" | tr \\n \\0 | xargs -0 readlink -f | tr \\n \\0 | xargs -0 ls -alhF | grep "$@" --color
 }
 fgp()    { NUM_MATCHES_TO_FIND=10000; fgptmpl "$@"; }
 fgp1()   { NUM_MATCHES_TO_FIND=1;     fgptmpl "$@"; }
@@ -222,7 +225,7 @@ lfgp()   {
     out=$(echo "$out" | grep "$1")
     shift
   done
-  echo "$out" | xargs grep -H -m $NUM_MATCHES_TO_FIND --color "$1" 2>/dev/null
+  echo "$out" | tr \\n \\0 | xargs -0 grep -H -m $NUM_MATCHES_TO_FIND --color "$1"  # 2>/dev/null
 }
 psgp()   {
   local f=/tmp/psgp-$RANDOM
@@ -1052,44 +1055,7 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
   # export PROMPT_COMMAND="$AAROEY_OLD_PROMPT_COMMAND"
   unset PROMPT_COMMAND
 
-  grep_file_name_or_content() {
-    # We can add option -l to grep to show only filename instead of matched content
-    # - $1 is '' or 'xargs'. grep file name if '', grep file content if 'xargs'
-    # - $2 directory
-    # - $3 is pattern
-    if [[ "$1" == xargs ]]; then
-      find -L "$2" -type f | tr \\n \\0 | xargs -0 grep -H -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
-    else
-      find -L "$2" -type f | grep -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
-    fi
-  }
-  fgp() {
-    >&2 echo 'Usage: fgp file1 file2 ... pattern'
-    if [[ $# -eq 1 ]]; then
-      find . -type f | xargs grep -H --color "$1"
-    else
-      until [[ $# -eq 1 ]]; do
-        if test -d "$1"; then
-          fgp "$1"/* "${!#}"
-        else
-          grep -H --color "${!#}" "$1"
-        fi
-        shift
-      done
-    fi
-  }
-
-  lfgp() { find . -type f | grep "$1" | xargs grep -H --color "$2"; }
-  # Stop after the first match found
-  fgp1() { find . -type f | xargs grep -m 1 --color "$@"; }
-  lgp()  {
-    >&2 echo 'Find files with given pattern under current dir ".".'
-    >&2 echo 'Usage: lgp <file_name_pattern>'
-    find . -type f | grep --color $@
-  }
-  lgp1() { find . -type f | grep $1 | xargs ls -alhF --color 1 | grep $1 --color; }
   ll()   { ls -alhF --color $@; }
-
   hist() {
     cat $HISTFILE | grep "$@" --color
   }

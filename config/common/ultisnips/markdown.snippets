@@ -67,47 +67,45 @@ snippet ,m "inline math" iA
 $$${1:${VISUAL}}$$$0
 endsnippet
 
-snippet ,beg "begin{} / end{}" iA
-\begin{${1:align}}
-  $0
-\end{$1}
-endsnippet
-
 snippet ,code "rouge code block" iA
 {% highlight ${1:c++} linenos %}
 $0
 {% endhighlight %}
 endsnippet
 
-snippet ",g([aAbBdDeEgGlLmMoOpPrRsStTxX])" "Greek character" irA
+snippet ",g(v?)([aAbBdDeEgGlLmMoOpPrRsStTxX])" "Greek character" irA
 `!p
-c = match.group(1)
+v = match.group(1)
+c = match.group(2)
+prefix = c
+if v:
+  prefix = 'var' + c
 if c.lower() == 'a':
-  snip.rv = '\%slpha' % c
+  snip.rv = '\%slpha' % prefix
 elif c.lower() == 'b':
-  snip.rv = '\%seta' % c
+  snip.rv = '\%seta' % prefix
 elif c.lower() == 'd':
-  snip.rv = '\%selta' % c
+  snip.rv = '\%selta' % prefix
 elif c.lower() == 'e':
-  snip.rv = '\%spsilon' % c
+  snip.rv = '\%spsilon' % prefix
 elif c.lower() == 'g':
-  snip.rv = '\%samma' % c
+  snip.rv = '\%samma' % prefix
 elif c.lower() == 'l':
-  snip.rv = '\%sambda' % c
+  snip.rv = '\%sambda' % prefix
 elif c.lower() == 'm':
-  snip.rv = '\%su' % c
+  snip.rv = '\%su' % prefix
 elif c.lower() == 'o':
-  snip.rv = '\%smega' % c
+  snip.rv = '\%smega' % prefix
 elif c.lower() == 'p':
-  snip.rv = '\%shi' % c
+  snip.rv = '\%shi' % prefix
 elif c.lower() == 'r':
-  snip.rv = '\%sho' % c
+  snip.rv = '\%sho' % prefix
 elif c.lower() == 's':
-  snip.rv = '\%sigma' % c
+  snip.rv = '\%sigma' % prefix
 elif c.lower() == 't':
-  snip.rv = '\%sheta' % c
+  snip.rv = '\%sheta' % prefix
 elif c.lower() == 'x':
-  snip.rv = '\%si' % c
+  snip.rv = '\%si' % prefix
 `
 endsnippet
 
@@ -171,18 +169,30 @@ snippet ,lr|2 "\left\|\right\|" iA
 \left\|$1\right\|
 endsnippet
 
-################
+################ Blocks
 
-snippet ... "..." iA
-\cdots
+snippet ,b{. "{ ... (multiple lines)" iA
+\left\\{
+  $1
+\right.
 endsnippet
 
-snippet ,l{a "\left{array\right." iA
-\left\\{
+snippet ,bay "begin{array} / end{array}" iA
 \begin{array}{l}
   $1
 \end{array}
-\right.
+endsnippet
+
+snippet ,bal "begin{} / end{}" iA
+\begin{${1:align}}
+  $2
+\end{$1}
+endsnippet
+
+################ 
+
+snippet ... "..." iA
+\cdots
 endsnippet
 
 snippet ,sum "sum" iA
@@ -198,7 +208,7 @@ snippet ,int "integral" iA
 endsnippet
 
 snippet ,lim "limit" iA
-\lim_{${1}\to ${2:\infty}} $0
+\lim_{${1}\to ${2:\infty}}
 endsnippet
 
 snippet ,d "derivative operator" iA
@@ -262,7 +272,7 @@ endsnippet
 
 ################ Fonts
 
-snippet ",f(bb|bf|cal|frak|scr|sf|tt)" "math fonts" irA
+snippet ",f(bb|bf|cal|frak|it|rm|scr|sf|tt)" "math fonts" irA
 \math`!p snip.rv = match.group(1)`{$1}
 endsnippet
 
@@ -274,18 +284,22 @@ snippet ,ftb "math fonts" iA
 \textbf{$1}
 endsnippet
 
-snippet ,fp "math fonts" iA
+snippet ,fp "math fonts, poor-mans's bold" iA
 \pmb{$1}
+endsnippet
+
+snippet ,fd "math fonts, used for vectors" iA
+\boldsymbol{$1}
 endsnippet
 
 ################ Vector calculus related
 
 snippet ,vip "inner product" iA
-\langle\pmb{$1},\pmb{$2}\rangle
+\langle${1:\boldsymbol{$2}},${3:\boldsymbol{$4}}\rangle
 endsnippet
 
 snippet ,vnorm "||v||" iA
-\|\pmb{$1}\|
+\|${1:\boldsymbol{$2}}\|
 endsnippet
 
 snippet ,vvals "the scalar values of a vector" iA
@@ -293,7 +307,7 @@ $1_{1},\cdots,$1_{$2}
 endsnippet
 
 snippet ,vlist "a list of vectors" iA
-\pmb{$1}_{1},\cdots,\pmb{$1}_{$2}
+\boldsymbol{$1}_{1},\cdots,\boldsymbol{$1}_{$2}
 endsnippet
 
 ################
