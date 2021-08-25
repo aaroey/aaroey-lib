@@ -154,14 +154,16 @@ findfileslargerthan() {
   (while IFS= read -r i; do ls -alh -color "$i"; done) < $filename_output > $largest_fileinfo_output
   head -n ${3:-20} $largest_fileinfo_output
 }
-# We can add option -l to grep to show only filename instead of matched content
 grep_file_name_or_content() {
+  # We can add option -l to grep to show only filename instead of matched content
   # - $1 is '' or 'xargs'. grep file name if '', grep file content if 'xargs'
   # - $2 directory
   # - $3 is pattern
-  local option_h=''
-  if [[ "$1" == xargs ]]; then option_h='-H'; fi
-  find -L "$2" -type f | $1 grep $option_h -m $NUM_MATCHES_TO_FIND --color "$3" 2>/dev/null
+  if [[ "$1" == xargs ]]; then
+    find -L "$2" -type f | xargs -d '\n' grep -H -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
+  else
+    find -L "$2" -type f | grep -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
+  fi
 }
 grepfile() {
   local pattern="$1"
@@ -1050,6 +1052,17 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
   # export PROMPT_COMMAND="$AAROEY_OLD_PROMPT_COMMAND"
   unset PROMPT_COMMAND
 
+  grep_file_name_or_content() {
+    # We can add option -l to grep to show only filename instead of matched content
+    # - $1 is '' or 'xargs'. grep file name if '', grep file content if 'xargs'
+    # - $2 directory
+    # - $3 is pattern
+    if [[ "$1" == xargs ]]; then
+      find -L "$2" -type f | tr \\n \\0 | xargs -0 grep -H -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
+    else
+      find -L "$2" -type f | grep -m $NUM_MATCHES_TO_FIND --color "$3"  # 2>/dev/null
+    fi
+  }
   fgp() {
     >&2 echo 'Usage: fgp file1 file2 ... pattern'
     if [[ $# -eq 1 ]]; then
