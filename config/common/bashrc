@@ -809,15 +809,17 @@ already_in_virtualenv() {
 }
 OLD_PYTHONPATH=''
 virtualenv_activate() {
-  if [[ $# -lt 1 ]] || [[ $# -gt 2 ]]; then
-    echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs_option>]'
+  if [[ $# -lt 1 ]] || [[ $# -gt 3 ]]; then
+    echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs_option> [<main_pkg>]]'
     echo '- pkgs_option: specifies which additional pip packages to install in '
     echo '  the environment. Valid values are: all, basic, none (default).'
+    echo '- main_pkg: the main package to instal, e.g. tensorflow, lingvo, etc.'
     return
   fi
 
   local vedir="$1"
   local pkgs_option="${2:-none}"
+  local main_pkg="${3:-''}"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
@@ -856,21 +858,26 @@ virtualenv_activate() {
   fi
 
   source "$activate_file"
+
+  # We want to install all the packages in one run so it can resolve the
+  # dependencies and find the correct package versions.
+  local pkgs="$main_pkg"
   if [[ "$pkgs_option" == 'basic' ]] || [[ "$pkgs_option" == 'all' ]]; then
     # Note @2018/12/06: recordclass, scrapy is not py36 compatible
-    virtualenv_pip_install $pyver \
-      mock ipython recordclass Pillow jupyter numpy scipy
+    pkgs="$pkgs mock ipython recordclass Pillow jupyter numpy scipy"
   fi
   if [[ "$pkgs_option" == 'all' ]]; then
-    virtualenv_pip_install $pyver \
-      selenium beautifulsoup4 requests scrapy bs4 lxml pymysql \
-      Faker \
-      img2html pandas nltk soundfile sox matplotlib
+    pkgs="$pkgs
+      selenium beautifulsoup4 requests scrapy bs4 lxml pymysql
+      Faker
+      img2html pandas nltk soundfile sox matplotlib"
   fi
-
   # if [[ $pyver == '3'* ]]; then
   #   virtualenv_pip_install $pyver something
   # fi
+  if [[ "$pkgs" ]]; then
+    virtualenv_pip_install $pyver $pkgs
+  fi
 
   # Change the PYTHONPATH:
   # OLD_PYTHONPATH=$PYTHONPATH
@@ -900,20 +907,11 @@ vadtmpl() {
     vedir="$vedir=$pkg"
     pkgs_option='basic'
   fi
-  virtualenv_activate $vedir $pkgs_option
+  virtualenv_activate $vedir $pkgs_option $pkg
 
-  # Change to the working dir first before installing new packages. This is very
-  # important!! See comments in virtualenv_activate() for more information.
   local veworkspace=$dir/default_virtualenv_workspace
   mkdir -p $veworkspace
   pushd $veworkspace
-  if [[ "$pkg" ]]; then
-    virtualenv_pip_install $pyver $pkg
-  fi
-  if [[ "$3" ]]; then
-    popd
-    pushd "$3"
-  fi
   reset_x
 }
 dav() {
