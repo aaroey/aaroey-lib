@@ -238,11 +238,19 @@ psgpkill() {
     return
   fi
   local f=/tmp/psgpkill-$RANDOM
-  ps -AlF > $f 2>&1
+  local pid_idx=''
+  if [[ "$(uname -s)" == 'Darwin' ]]; then
+    ps -Alf > $f 2>&1
+    pid_idx=2
+  else
+    ps -AlF > $f 2>&1
+    pid_idx=4
+  fi
   grep --color "$@" $f
   echo ''
 
-  local pids="$(grep --color "$@" $f | sed 's/\t/ /;s/ \+/ /g' | cut -d' ' -f 4)"
+  # Use '  *' instead of ' \+' so Mac version of sed can work (it doesn't support '\+').
+  local pids="$(grep --color "$@" $f | sed 's/\t/ /;s/  */ /g' | cut -d' ' -f $pid_idx)"
   if ! [[ "$pids" ]]; then
     echo 'No process found!'
     return
@@ -1127,7 +1135,7 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
   datetoseconds() { date -j -f "%m-%d-%Y_%H:%M:%S" "$1" "+%s"; }
   ll()   { ls -alhG "$@"; }
   psgp() {
-    echo '  UID   PID  PPID        F CPU PRI NI       SZ    RSS WCHAN     S             ADDR TTY           TIME CMD'
+    echo '   UID   PID  PPID        F CPU PRI NI       SZ    RSS WCHAN     S             ADDR TTY           TIME CMD'
     ps -Al | grep --color "$@";
   }
 
