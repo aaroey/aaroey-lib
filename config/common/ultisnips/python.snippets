@@ -140,7 +140,7 @@ import traceback; print(traceback.extract_stack(limit=$0)[0])
 endsnippet
 
 snippet ,wg "write current tf graph" bA
-with open('/tmp/lambdatfpy/$1.pbtxt', 'w') as f:
+with open('/tmp/$1.pbtxt', 'w') as f:
   f.write(str(tf.get_default_graph().as_graph_def(add_shapes=True)))
   import sys; sys.exit(1);
 endsnippet

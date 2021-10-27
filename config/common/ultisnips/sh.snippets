@@ -49,3 +49,10 @@ else:
   snip.rv = '='
 `> $0 \e[0m"
 endsnippet
+
+snippet ,qa "Ask question and let user to type the answer." bA
+read -p "$1? y|[n]" answer
+if [[ "$answer" == 'y' ]]; then
+  $2
+fi
+endsnippet

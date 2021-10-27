@@ -146,11 +146,11 @@ findfileslargerthan() {
   local filename_output=$(mktemp /tmp/XXXXXX)
   local largest_fileinfo_output=$(mktemp /tmp/XXXXXX)
 
-  echo 'Finding the first $3 files inside directory $1 which are larger than $2 and sort them by size ...'
-  echo "Writing large file names output to $filename_output ..."
+  >&2 echo -e "\e[93m=> Finding the first \$3 files inside directory \$1 which are larger than \$2 and sort them by size ...\e[0m"
+  >&2 echo -e "\e[93m=> Writing large file names output to $filename_output ...\e[0m"
   find "${1:-$HOME}" -type f -size +"${2:-50M}" -ls | sort -nr -k 7,7 | sed 's/^[^/]*//' > $filename_output
 
-  echo "Writing largest file info output to $largest_fileinfo_output ..."
+  >&2 echo -e "\e[93m=> Writing largest file info output to $largest_fileinfo_output ...\e[0m"
   (while IFS= read -r i; do ls -alh -color "$i"; done) < $filename_output > $largest_fileinfo_output
   head -n ${3:-20} $largest_fileinfo_output
 }
@@ -878,47 +878,29 @@ virtualenv_deactivate() {
   # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  local usage='Usage: vadtmpl nightly|cpu|gpu|<empty> <workspace>'
-  if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
-    echo $usage
+  if [[ $# -gt 2 ]]; then
+    >&2 echo -e "\e[91m=> Usage: vadtmpl [<main-package> [<workspace>]] \e[0m"
     return
   fi
   set_x
-  local tag=$1
-  local pyver=${pyver:-3}
+  local pkg="$1"
+  local pyver=3
   local dir=$HOME/tmp
-  local veworkspace=$dir/default_virtualenv_workspace
-  local tfpkg=''
-  if [[ "$tag" == 'cpu' ]]; then
-    tfpkg='tensorflow'
-  elif [[ "$tag" == 'gpu' ]]; then
-    tfpkg='tensorflow-gpu'
-  elif [[ "$tag" == 'nightly' ]]; then
-    tfpkg='tf-nightly-gpu'
-  elif [[ "$tag" ]]; then
-    dir=$HOME/Workspace/aaroey/$tag
-  fi
   local vedir="${2:-$dir/virtualenv_py${pyver}}"
-  if [[ "$tfpkg" != '' ]]; then
-    vedir="$vedir=$tfpkg"
-  fi
-
   local pkgs_option='none'
-  if [[ "$pkgs" ]]; then
-    pkgs_option=$([[ "$tag" ]] && echo 'all' || echo 'basic')
+  if [[ "$pkg" != '' ]]; then
+    vedir="$vedir=$pkg"
+    pkgs_option='basic'
   fi
   virtualenv_activate $vedir $pkgs_option
 
   # Change to the working dir first before installing new packages. This is very
   # important!! See comments in virtualenv_activate() for more information.
+  local veworkspace=$dir/default_virtualenv_workspace
   mkdir -p $veworkspace
   pushd $veworkspace
-  if [[ "$tfpkg" ]] && [[ "$pkgs_option" != 'none' ]]; then
-    # keras_applications keras_preprocessing \
-    # tensorflow-serving-api tensorflow-datasets \
-    virtualenv_pip_install $pyver \
-      $tfpkg \
-      lingvo
+  if [[ "$pkg" ]]; then
+    virtualenv_pip_install $pyver $pkg
   fi
   if [[ "$3" ]]; then
     popd
@@ -930,11 +912,10 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vadempty()   { vadtmpl ''      "$@"; }
-vadgpu()     { vadtmpl gpu     "$@"; }
-vad()        { vadtmpl cpu     "$@"; }
-vadnightly() { vadtmpl nightly "$@"; }
-vadtmp()     { vadtmpl ''      /tmp/$RANDOM; }
+vadempty() { vadtmpl ''         /tmp/$RANDOM; }
+vadlv()    { vadtmpl lingvo     "$@"; }
+vadtf()    { vadtmpl tensorflow "$@"; }
+vad()      { vadlv "$@"; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
@@ -942,7 +923,55 @@ export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtua
 # TODO(laigd): virtualenv doesn't work without this, and will remove the
 # python->python3 alias, not sure why.
 python() { echo -e "\e[93mBe careful, using alias...\e[0m"; python3 "$@"; }
-ipythonvi() { $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"; }
+ipythontmpl() {
+  $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"
+}
+ipythonvi() {
+  ipythontmpl -i -c "
+import collections
+import datetime
+import functools
+import io
+import itertools
+import logging
+import numpy as np
+import os
+import random
+import re
+# import requests  # Not working in ipython3
+import shutil
+import six
+import string
+import sys
+import tempfile
+import time
+import traceback
+$@
+"
+}
+_pytf_run() {
+  ipythontmpl -i -c "
+import lingvo.compat as tf
+from lingvo.core import py_utils
+"
+}
+pytf() {
+  if [[ "$VIRTUAL_ENV" == "" ]]; then
+    >&2 echo 'Error: must be run inside a virtual env!'
+    return
+  fi
+  local working_dir=${1:-$PWD}
+  if [[ -f "$working_dir/tensorflow/python/BUILD" ]]; then
+    >&2 echo 'Error: seems to be running inside a tensorflow repository, import may fail, are you sure to continue?[N/y]'
+    read line
+    if ! [[ "$line" == 'y' ]]; then
+      return
+    fi
+  fi
+  pushd $working_dir
+  _pytf_run "$@"
+  popd
+}
 
 ##################################### misc #####################################
 
@@ -1039,6 +1068,31 @@ runperiodically() {
     $@
   done
 }
+
+# Why doesn't scp work? Because we enabled aaroey bash scripts remotely??! For
+# example, sshcpto will execute the remote's .bashrc before copying!
+sshcpto() {
+  if [[ $# -ne 3 ]]; then
+    echo "Usage: sshcpto $USER@12.34.56.78 local_src_path remote_dst_path"
+    return
+  fi
+  local remote="$1"
+  local local_src_path="$2"
+  local remote_dst_path="$3"
+  ssh "$remote" "cat > $remote_dst_path" < "$local_src_path"
+}
+sshcpfrom() {
+  if [[ $# -ne 3 ]]; then
+    echo "Usage: sshcpfrom $USER@12.34.56.78 remote_src_path local_dst_path"
+    return
+  fi
+  local remote="$1"
+  local remote_src_path="$2"
+  local local_dst_path="$3"
+  ssh "$remote" "cat $remote_src_path" > "$local_dst_path"
+}
+
+diff() { colordiff "$@"; }
 
 # Use ffmpeg to convert mp3 to youtube-compatible video
 ffmpeg_mp3_to_youtube_compatible_avi() {
