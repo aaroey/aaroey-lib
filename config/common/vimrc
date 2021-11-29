@@ -1,6 +1,11 @@
 """""""""""""""""""""""""""""""" For vim-plug """"""""""""""""""""""""""""""""""
 set nocompatible              " be iMproved, required
 
+let s:is_google = 0
+if filereadable("/usr/share/vim/google/google.vim")
+  let s:is_google = 1
+endif
+
 if empty(glob('~/.vim/autoload/plug.vim'))
   silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
         \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -30,7 +35,7 @@ Plug 'ervandew/supertab'
 Plug 'SirVer/ultisnips'
 
 " For code formatting. See https://github.com/google/vim-codefmt
-if v:version >= 800
+if v:version >= 800 && !s:is_google
   Plug 'google/vim-maktaba'
   Plug 'google/vim-codefmt'
   Plug 'google/vim-glaive'
@@ -50,7 +55,7 @@ Plug 'vim-scripts/AnsiEsc.vim'
 call plug#end()
 
 """""""""""""""""""""""""""""""" For codefmt """""""""""""""""""""""""""""""""""
-if v:version >= 800
+if v:version >= 800 && !s:is_google
   " the glaive#Install() should go after the `call plug#end()`
   call glaive#Install()
   " Optional: Enable codefmt's default mappings on the <Leader>= prefix.

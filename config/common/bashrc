@@ -819,7 +819,7 @@ virtualenv_activate() {
 
   local vedir="$1"
   local pkgs_option="${2:-none}"
-  local main_pkg="${3:-''}"
+  local main_pkg=${3:-''}
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
