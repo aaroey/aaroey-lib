@@ -19,13 +19,14 @@ case ${1:word} in
 esac
 endsnippet
 
-snippet "if "  "if statement" brA
+snippet "if"  "if statement" brA
 if [[ $0 ]]; then
 fi
 endsnippet
 
-snippet "for " "for statement" brA
-for ${1:i} in $0; do
+snippet "for" "for statement" brA
+for ${1:i} in ${2:{0..10}}; do
+  $0
 done
 endsnippet
 
@@ -55,4 +56,25 @@ read -p "$1? y|[n]" answer
 if [[ "$answer" == 'y' ]]; then
   $2
 fi
+endsnippet
+
+snippet ,bisect "Binary search." bA
+# TODO: need to implement function 'runat' and 'checkat'.
+# Invariant: $l is always good ('checkat $l' returns '1'), $r is always bad.
+local l=$1
+local r=$2
+while [[ $[l+1] -lt $r ]]; do
+  local mid=$[($l+$r)/2]
+  >&2 echo -e "\e[93m=> l=$l r=$r trying $mid \e[0m"
+  runat $mid
+  if [[ $(checkat $mid) == '0' ]]; then
+    r=$mid
+  else
+    l=$mid
+  fi
+done
+endsnippet
+
+snippet ,v "Define a local variable." bA
+local $1=${$2:?Set $1}
 endsnippet

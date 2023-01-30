@@ -43,13 +43,9 @@ endif
 
 " https://github.com/weynhamz/vim-plugin-minibufexpl
 Plug 'techlivezheng/vim-plugin-minibufexpl'
-
 Plug 'scrooloose/nerdtree'
-
 Plug 'kien/ctrlp.vim'
-
 Plug 'vim-scripts/a.vim'
-
 Plug 'vim-scripts/AnsiEsc.vim'
 
 call plug#end()
@@ -76,7 +72,6 @@ set autochdir
 " au BufEnter * silent! lcd %:p:h
 
 set autoindent
-
 set autoread
 
 if has('mac')
@@ -89,21 +84,17 @@ if has('mac')
 
   set clipboard=
 else
-  set clipboard=unnamedplus      " Yank to the X window clipboard. Only in Vim 7.3.74+.
-  " set clipboard+=unnamed         " Yank to the clipboard (Vim7.2)
+  set clipboard=unnamedplus     " Yank to the X window clipboard (Vim 7.3.74+)
+  " set clipboard+=unnamed      " Yank to the clipboard (Vim7.2)
 endif
 
-" Don't scan included files.
-set complete-=i
+set complete-=i                 " Don't scan included files.
 
 set expandtab
 " set history=65536
 
-" Highlight previous search results
-set hlsearch
-
-" Do incremental searching
-set incsearch
+set hlsearch                    " Highlight previous search results
+set incsearch                   " Do incremental searching
 
 " For Split screen users: higlight the status line of the active window
 set laststatus=2                " Always display the last status

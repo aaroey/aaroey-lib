@@ -11,9 +11,9 @@
 ################################# Init scripts #################################
 
 # The local root of the cloned repository.
-AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
+export AAROEY_LIB_DIR=$HOME/Workspace/aaroey/aaroey-lib
 AAROEY_LIB_CONFIG_COMMON_DIR=$AAROEY_LIB_DIR/config/common
-DOCKER_ROOT=$HOME/Workspace/dockerroot
+export DOCKER_ROOT=$HOME/Workspace/dockerroot
 
 init_inputrc() {
   if ! [[ -f $HOME/.inputrc.oss_backup ]]; then
@@ -227,10 +227,12 @@ lfgp()   {
   done
   echo "$out" | tr \\n \\0 | xargs -0 grep -H -m $NUM_MATCHES_TO_FIND --color "$1"  # 2>/dev/null
 }
+
+_PS_COLUMNS="F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD"
 psgp()   {
   local f=/tmp/psgp-$RANDOM
   ps -AlF > $f 2>&1
-  grep --color "^F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD\|$@" $f
+  grep --color "^$_PS_COLUMNS\|$@" $f
 }
 psgpkill() {
   if [[ $# -eq 0 ]]; then
@@ -246,7 +248,7 @@ psgpkill() {
     ps -AlF > $f 2>&1
     pid_idx=4
   fi
-  grep --color "$@" $f
+  grep --color "^$_PS_COLUMNS\|$@" $f || true  # Suppress non ok return status.
   echo ''
 
   # Use '  *' instead of ' \+' so Mac version of sed can work (it doesn't support '\+').
@@ -255,15 +257,17 @@ psgpkill() {
     echo 'No process found!'
     return
   fi
-  echo 'PIDs to be killed:'
+  echo 'PIDs to kill:'
   echo "$pids"
   echo ''
 
-  local answer=y
-  read -p 'Do you want to kill ALL these processes? y|[n]: ' answer
-  if [[ "$answer" == 'y' ]]; then
+  local answer=n
+  if [[ "$PSGP_ENFORCE_KILL" != 'true' ]]; then
+    read -p 'Do you want to kill ALL these processes? y|[n]: ' answer
+  fi
+  if [[ "$PSGP_ENFORCE_KILL" == 'true' ]] || [[ "$answer" == 'y' ]]; then
     for pid in $pids; do
-      kill -9 $pid
+      kill -9 $pid || true  # Suppress non ok return status.
     done
   fi
 }
