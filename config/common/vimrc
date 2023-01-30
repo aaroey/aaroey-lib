@@ -212,7 +212,8 @@ noremap ,< wbi<<ESC>ea><ESC>
 noremap ," wbi"<ESC>ea"<ESC>
 noremap ,' wbi'<ESC>ea'<ESC>
 noremap ,` wbi`<ESC>ea`<ESC>
-noremap ,$ wbi\\(<ESC>ea\\)<ESC>
+" noremap ,$ wbi\\(<ESC>ea\\)<ESC>
+noremap ,$ wbi$$<ESC>ea$$<ESC>
 
 " let mapleader=','  " Will probably conflict with the noremaps above.
 

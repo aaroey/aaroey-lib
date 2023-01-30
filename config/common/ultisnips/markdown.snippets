@@ -127,46 +127,34 @@ snippet "(?<!l|r|\\){" "{}, where the { is not prefixed with ,l or ,lr or \" irA
 {$1}
 endsnippet
 
-snippet \{ "\{\}" iA
+snippet \{ "literal {} i.e. \{\}" iA
 \\{$1\\}
-endsnippet
-
-snippet <> "<>" iA
-\langle $1\rangle
-endsnippet
-
-snippet "(?<!,lr)\|1" "|x|, where the |1 is not prefixed with ,lr" irA
-\vert $1\vert
-endsnippet
-
-snippet "(?<!,lr)\|2" "||x||, where the |2 is not prefixed with ,lr" irA
-\|$1\|
 endsnippet
 
 ################ Various types of stretchy brackets
 
-snippet ,lr( "\left(\right)" iA
-\left($1\right)
+snippet ,lr( "\left( $1 \right)" iA
+\p{$1}
 endsnippet
 
-snippet ,lr[ "\left[\right]" iA
-\left[$1\right]
+snippet ,lr[ "\left[ $1 \right]" iA
+\bk{$1}
 endsnippet
 
-snippet ,lr{ "\left{\right}" iA
-\left\\{$1\right\\}
+snippet ,lr{ "\left\\{ $1 \right\\}" iA
+\br{$1}
 endsnippet
 
-snippet ,lr< "\left<\right>" iA
-\left\langle $1\right\rangle
+snippet ,ip "inner product" iA
+\iprod{${1:\boldsymbol{$2}}}{${3:\boldsymbol{$4}}}
 endsnippet
 
-snippet ,lr|1 "\left|\right|" iA
-\left|$1\right|
+snippet ,abs "|x|" iA
+\abs{$1}
 endsnippet
 
-snippet ,lr|2 "\left\|\right\|" iA
-\left\|$1\right\|
+snippet ,norm "||x||" iA
+\norm{${1:\boldsymbol{$2}}}
 endsnippet
 
 ################ Blocks
@@ -212,11 +200,11 @@ snippet ,lim "limit" iA
 endsnippet
 
 snippet ,d "derivative operator" iA
-\mathrm{d}
+\d
 endsnippet
 
 snippet ,pd "partial derivative operator" iA
-\partial
+\pd
 endsnippet
 
 snippet "([^ _])_" "subscript" irA
@@ -276,38 +264,30 @@ snippet ",f(bb|bf|cal|frak|it|rm|scr|sf|tt)" "math fonts" irA
 \math`!p snip.rv = match.group(1)`{$1}
 endsnippet
 
-snippet ,ftx "math fonts" iA
+snippet ,ftx "font used for regular text" iA
 \text{$1}
 endsnippet
 
-snippet ,ftb "math fonts" iA
+snippet ,ftb "font used for bold text" iA
 \textbf{$1}
 endsnippet
 
-snippet ,fp "math fonts, poor-mans's bold" iA
-\pmb{$1}
-endsnippet
-
-snippet ,fd "math fonts, used for vectors" iA
+snippet ,fd "font used for vectors" iA
 \boldsymbol{$1}
 endsnippet
 
 ################ Vector calculus related
 
-snippet ,vip "inner product" iA
-\langle${1:\boldsymbol{$2}},${3:\boldsymbol{$4}}\rangle
+snippet ,vip "inner product with vectors" iA
+\viprod{$1}{$2}
 endsnippet
 
-snippet ,vnorm "||v||" iA
-\|${1:\boldsymbol{$2}}\|
+snippet ,list "a list of scalars, starting from index 1" iA
+\list{$1}{$2}
 endsnippet
 
-snippet ,vvals "the scalar values of a vector" iA
-$1_{1},\cdots,$1_{$2}
-endsnippet
-
-snippet ,vlist "a list of vectors" iA
-\boldsymbol{$1}_{1},\cdots,\boldsymbol{$1}_{$2}
+snippet ,vlist "a list of vectors, starting from index 1" iA
+\vlist{$1}{$2}
 endsnippet
 
 ################
