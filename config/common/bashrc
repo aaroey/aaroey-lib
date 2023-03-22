@@ -1103,6 +1103,22 @@ sshcpfrom() {
 }
 
 diff() { colordiff "$@"; }
+difffilerange() {
+  if [[ $# -lt 3 ]]; then
+    echo "Usage: difffilerange <file1> <start-line>,<end-line> [<file2>] <start-line>,<end-line>"
+    echo "If <file2> is not provided, it'll let <file2>=<file1>."
+    return
+  fi
+  local file1="$1"
+  local range1="$2"
+  local file2="$3"
+  local range2="$4"
+  if [[ $# -eq 3 ]]; then
+    file2="$1"  # Same file.
+    range2="$3"
+  fi
+  diff <(sed -n "${range1}p" $file1) <(sed -n "${range2}p" $file2)
+}
 
 # Use ffmpeg to convert mp3 to youtube-compatible video
 ffmpeg_mp3_to_youtube_compatible_avi() {
