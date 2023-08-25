@@ -868,10 +868,11 @@ virtualenv_activate() {
   local pkgs="$main_pkg"
   if [[ "$pkgs_option" == 'basic' ]] || [[ "$pkgs_option" == 'all' ]]; then
     # Note @2018/12/06: recordclass, scrapy is not py36 compatible
-    pkgs="$pkgs mock ipython recordclass Pillow jupyter numpy scipy"
+    pkgs="$pkgs ipython jupyter numpy"
   fi
   if [[ "$pkgs_option" == 'all' ]]; then
     pkgs="$pkgs
+      mock recordclass Pillow scipy
       selenium beautifulsoup4 requests scrapy bs4 lxml pymysql
       Faker
       img2html pandas nltk soundfile sox matplotlib"
@@ -922,10 +923,12 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vadempty() { vadtmpl ''         /tmp/$RANDOM; }
+vadempty() { vadtmpl '' /tmp/$RANDOM; }
 vadlv()    { vadtmpl lingvo     "$@"; }
 vadtf()    { vadtmpl tensorflow "$@"; }
-vad()      { vadlv "$@"; }
+vadpx()    { vadtmpl praxis     "$@"; }
+vadjx()    { vadtmpl 'jax[cpu]' "$@"; }
+vad()      { vadpx   "$@";            }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
@@ -934,6 +937,10 @@ export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtua
 # python->python3 alias, not sure why.
 python() { echo -e "\e[93mBe careful, using alias...\e[0m"; python3 "$@"; }
 ipythontmpl() {
+  if [[ "$VIRTUAL_ENV" == "" ]]; then
+    >&2 echo 'Error: must be run inside a virtual env!'
+    return
+  fi
   $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"
 }
 ipythonvi() {
@@ -959,17 +966,7 @@ import traceback
 $@
 "
 }
-_pytf_run() {
-  ipythontmpl -i -c "
-import lingvo.compat as tf
-from lingvo.core import py_utils
-"
-}
 pytf() {
-  if [[ "$VIRTUAL_ENV" == "" ]]; then
-    >&2 echo 'Error: must be run inside a virtual env!'
-    return
-  fi
   local working_dir=${1:-$PWD}
   if [[ -f "$working_dir/tensorflow/python/BUILD" ]]; then
     >&2 echo 'Error: seems to be running inside a tensorflow repository, import may fail, are you sure to continue?[N/y]'
@@ -979,9 +976,13 @@ pytf() {
     fi
   fi
   pushd $working_dir
-  _pytf_run "$@"
+  ipythontmpl -i -c "
+import lingvo.compat as tf
+from lingvo.core import py_utils
+" "$@"
   popd
 }
+pyjx() { ipythontmpl -i -c "import jax" "$@"; }
 
 ##################################### misc #####################################
 
