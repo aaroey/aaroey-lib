@@ -42,32 +42,34 @@ function imgMimeType(header4B) {
 
 // Please refer to:
 // https://stackoverflow.com/questions/18299806/how-to-check-file-mime-type-with-javascript-before-upload
-function selectImageFile(blob) {
-  return new Promise((resolve, reject) => {
-    // Fast path: check file extension.
-    if (blob.type.includes('image')) {
-      // Use any type other than UNKNOWN is fine.
-      resolve(blob);
-      return;
-    }
+function selectImageFile(file, fullRelativePath) {
+  // Adds a custom property (.fullRelativePath) to store the relative path info.
+  file.fullRelativePath = fullRelativePath;
 
-    // Slow path: read the magic numbers.
-    let reader = new FileReader();
-    reader.onloadend = function(e) {
-      let arr = new Uint8Array(e.target.result);
-      let header = '';
-      for (let i = 0; i < arr.length; i++) {
-        header += arr[i].toString(16);
-      }
-      if (imgMimeType(header) == MimeType.UNKNOWN) {
-        resolve(null);
-      } else {
-        resolve(blob);
-      }
-    };
-    // Only read the first 4 bytes.
-    reader.readAsArrayBuffer(blob.slice(0, 4));
-  });
+  // Fast path: check file extension.
+  if (file.type.includes('image')) {
+    // Use any type other than UNKNOWN is fine.
+    return file;
+  }
+
+  // Slow path: read the magic numbers.
+  let reader = new FileReader();
+  let result = null;
+  reader.onloadend = function(e) {
+    let arr = new Uint8Array(e.target.result);
+    let header = '';
+    for (let i = 0; i < arr.length; i++) {
+      header += arr[i].toString(16);
+    }
+    if (imgMimeType(header) == MimeType.UNKNOWN) {
+      result = null;
+    } else {
+      result = file;
+    }
+  };
+  // Only read the first 4 bytes.
+  reader.readAsArrayBuffer(file.slice(0, 4));
+  return result;
 }
 
 function elemById(id) {
@@ -82,6 +84,18 @@ function getSelectedCnt() {
 function getImgTable() {
   return elemById('img_table');
 }
+function getInputDirName() {
+  return elemById('input_dir_name');
+}
+function getSelectedImagesDiv() {
+  return elemById('selected_imgs_div');
+}
+function getToggleSelectedBtn() {
+  return elemById('toggle_selected');
+}
+function getNumColumns() {
+  return elemById('num_columns');
+}
 
 function newRowWithContent(data) {
   td = document.createElement('td');
@@ -93,8 +107,8 @@ function newRowWithContent(data) {
 
 // Show or hide the selected image names.
 function toggleSelectedNamesState() {
-  let div = elemById('selected_imgs_div');
-  let btn = elemById('toggle_selected');
+  let div = getSelectedImagesDiv();
+  let btn = getToggleSelectedBtn();
   let display = div.style.display;
   if (display == 'none' || display == '') {
     div.style.display = 'block';
@@ -140,41 +154,39 @@ function clearSelections() {
 }
 
 // Add or remove an image from the selected image list.
-function toggleImgSelectionState(img, blob) {
-  const p = blob.webkitRelativePath;
+function toggleImgSelectionState(img, file) {
+  const path = file.fullRelativePath;
   let selectedCntElem = getSelectedCnt();
   let selectedCnt = parseInt(selectedCntElem.innerHTML);
   let table = getSelectedTable();
   let hasRow = false;
   for (r of table.rows) {
-    if (r.firstChild.textContent == p) {
+    if (r.firstChild.textContent == path) {
       hasRow = true;
       table.removeChild(r);
-      img.classList.remove('selected');
+      img.classList.remove('selected');  // Add css style to mask the image.
       selectedCntElem.innerHTML = selectedCnt - 1;
       break;
     }
   }
   if (!hasRow) {
     img.classList.add('selected');
-    table.appendChild(newRowWithContent(p));
+    table.appendChild(newRowWithContent(path));
     selectedCntElem.innerHTML = selectedCnt + 1;
   }
 }
 
 function fileCmp(lhs, rhs) {
-  return lhs.webkitRelativePath.localeCompare(rhs.webkitRelativePath);
+  return lhs.fullRelativePath.localeCompare(rhs.fullRelativePath);
 }
 
-function handleDir(e) {
-  let promises = [];
-  for (const f of e.target.files) {
-    promises.push(selectImageFile(f));
-  }
+// Shows images processed by selectImageFile(), represented as 'imgPromises',
+// to the web page.
+function displayImages(imgPromises) {
   Promise
-      .all(promises) // Wait for the resolutions.
+      .all(imgPromises) // Wait for the resolutions.
       .then(results => {
-        const cols = parseInt(elemById('num_columns').value);
+        const cols = parseInt(getNumColumns().value);
         const width = Math.floor(getWidth() / cols) - 20;
 
         let table = getImgTable();
@@ -185,6 +197,7 @@ function handleDir(e) {
         images = images.sort(fileCmp);
         for (const f of images) {
           if (f == null) {
+            // selectImageFile() will emit null for non-image files.
             continue;
           }
           if (i % cols == 0) {
@@ -194,7 +207,8 @@ function handleDir(e) {
           ++i;
 
           let img = document.createElement('img');
-          // f.webkitRelativePath is based on html dir, so won't work.
+          // f.webkitRelativePath is '' when using Chrome web apis, so won't
+          // work.
           img.src = URL.createObjectURL(f);
           img.width = width;
           img.onclick = () => { toggleImgSelectionState(img, f); };
@@ -206,13 +220,43 @@ function handleDir(e) {
       });
 }
 
+// Recursively add images from sub directories.
+async function processDir(dirHandle, pathPrefix) {
+  let promises = [];
+  let path = pathPrefix + '/' + dirHandle.name;
+  for await (const handle of dirHandle.values()) {
+    if (handle.kind == 'file') {
+      promises.push(
+        handle.getFile().then(
+          (file) => selectImageFile(file, path + '/' + handle.name)
+        )
+      );
+    } else if (handle.kind == 'directory') {
+      let subPromises = await processDir(handle, path);
+      promises = promises.concat(subPromises);
+    }
+    // Skip other file kinds.
+  }
+  return promises;
+}
+
+async function handleDir() {
+  const dirHandle = await window.showDirectoryPicker({
+    // Set 'id' to an arbitrary identifier to remember the last directory.
+    // TODO: doesn't seem to work.
+    id: 'images',
+  });
+  getInputDirName().innerHTML = 'Chosen directory: ' + dirHandle.name;
+  displayImages(await processDir(dirHandle, ''));
+}
+
 function addEventListener(id, eventName, handler) {
   let elem = elemById(id);
   elem.addEventListener(eventName, handler, false);
 }
 
 window.onload = function() {
-  addEventListener('input_dir', 'change', handleDir)
+  addEventListener('input_dir', 'click', handleDir)
   addEventListener('toggle_selected', 'click', toggleSelectedNamesState)
   addEventListener('copy_selected', 'click', copySelectedNamesToClipboard)
   addEventListener('clear_selected', 'click', clearSelections)
