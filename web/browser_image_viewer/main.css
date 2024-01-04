@@ -10,14 +10,5 @@
 .selected {
   /* box-shadow: 0px 12px 22px 1px #333; */
   border: 2px solid red;
-  opacity: 0.5;
-}
-
-.selected_imgs_div {
-  background-color: #c7edcc;
-  border-color: white;
-  z-index: 9998;
-  position: fixed ! important;
-  right: 0px;
-  top: 0px;
+  opacity: 0.2;
 }

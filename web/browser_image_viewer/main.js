@@ -23,8 +23,6 @@ const MimeType = {
 
 Object.freeze(MimeType);
 
-destDirHandle = null;  // The destination dir to move the selected images to.
-
 // See more mime types in: http://en.wikipedia.org/wiki/List_of_file_signatures
 function imgMimeType(header4B) {
   if (header4B == '89504e47') {
@@ -45,30 +43,44 @@ function imgMimeType(header4B) {
 // Please refer to:
 // https://stackoverflow.com/questions/18299806/how-to-check-file-mime-type-with-javascript-before-upload
 function selectImageFile(file) {
-  // Fast path: check file extension.
-  if (file.type.includes('image')) {
-    // Use any type other than UNKNOWN is fine.
-    return file;
-  }
+  // Note: since 'onloadend' is async and there seems to be no way to wait for
+  // it to complete (i.e. making it sync), we need to return a Promise here.
+  // Also, given the usage of 'file' below (e.g. checking the file.type, etc),
+  // 'file' need to be an actual File object, not a Promise.
+  return new Promise((resolve, reject) => {
+    // Note: this executor function (i.e. this Promise constructor argument,
+    // which is a function) will run immediately by the Promise constructor.
+    // The 'resolve' function provides users a way to fullfill the value
+    // of this Promise. It has nothing to do with the downstream callbacks
+    // chained using '.then()'.
+    // In this case, the 'resolve' function will be called asynchronously in
+    // FileReader.onclick, i.e. it may not have been run when this executor
+    // function exits.
 
-  // Slow path: read the magic numbers.
-  let reader = new FileReader();
-  let result = null;
-  reader.onloadend = function(e) {
-    let arr = new Uint8Array(e.target.result);
-    let header = '';
-    for (let i = 0; i < arr.length; i++) {
-      header += arr[i].toString(16);
+    // Fast path: check file extension.
+    if (file.type.includes('image')) {
+      // Use any type other than UNKNOWN is fine.
+      resolve(file);
+      return;
     }
-    if (imgMimeType(header) == MimeType.UNKNOWN) {
-      result = null;
-    } else {
-      result = file;
-    }
-  };
-  // Only read the first 4 bytes.
-  reader.readAsArrayBuffer(file.slice(0, 4));
-  return result;
+
+    // Slow path: read the magic numbers.
+    let reader = new FileReader();
+    reader.onloadend = function(e) {
+      let arr = new Uint8Array(e.target.result);
+      let header = '';
+      for (let i = 0; i < arr.length; i++) {
+        header += arr[i].toString(16);
+      }
+      if (imgMimeType(header) == MimeType.UNKNOWN) {
+        resolve(null);
+      } else {
+        resolve(file);
+      }
+    };
+    // Only read the first 4 bytes.
+    reader.readAsArrayBuffer(file.slice(0, 4));
+  });
 }
 
 function elemById(id) {
@@ -98,6 +110,8 @@ function newRowWithContent(data) {
   return tr;
 }
 
+destDirHandle = null;  // The destination dir to move the selected images to.
+
 // Add or remove an image from the selected image list.
 async function moveSelectedImage(img, file) {
   if (destDirHandle == null) {
@@ -107,16 +121,16 @@ async function moveSelectedImage(img, file) {
   }
   let targetDir = null;
   let movedCntElem = getMovedCnt();
-  let selectedCnt = parseInt(movedCntElem.innerHTML);
+  let movedCnt = parseInt(movedCntElem.innerHTML);
 
   if (file.imgViewerCurDirHandle == file.imgViewerSrcDirHandle) {
     targetDir = destDirHandle;
     img.classList.add('selected');  // Add css style to mask the image.
-    movedCntElem.innerHTML = selectedCnt + 1;
+    movedCntElem.innerHTML = movedCnt + 1;
   } else if (file.imgViewerCurDirHandle == destDirHandle) {
     targetDir = file.imgViewerSrcDirHandle;
     img.classList.remove('selected');
-    movedCntElem.innerHTML = selectedCnt - 1;
+    movedCntElem.innerHTML = movedCnt - 1;
   } else {
     throw new Error('Invalid file dir handle!');
   }
@@ -195,21 +209,44 @@ async function processDir(dirHandle, pathPrefix) {
   return promises;
 }
 
+// Reset the webpage status.
+function reset() {
+  getMovedCnt().innerHTML = 0;
+}
+
+// Tracks the handle of the last opened src dir. We added this since setting
+// {'id': <some-string>} when calling showDirectoryPicker() doesn't seem to
+// work, see below.
+lastSrcDir = null;
+
 async function handleSrcDir() {
-  const dirHandle = await window.showDirectoryPicker({
-    // Set 'id' to an arbitrary identifier to remember the last directory.
-    // TODO: doesn't seem to work.
-    id: 'src_dir',
-  });
+  reset();
+
+  let options = {
+    id: 'src_dir',  // Doesn't seem to work.
+  };
+  if (lastSrcDir !== null) {
+    options['startIn'] = lastSrcDir;
+  }
+  const dirHandle = await window.showDirectoryPicker(options);
+  lastSrcDir = dirHandle;
   getSrcDirName().innerHTML = 'Chosen src directory: ' + dirHandle.name;
   displayImages(await processDir(dirHandle, ''));
 }
 
 async function handleDstDir() {
-  const dirHandle = await window.showDirectoryPicker({
+  reset();
+
+  let options = {
     id: 'dst_dir',
     mode: 'readwrite',
-  });
+  };
+  if (destDirHandle == null) {
+    options['startIn'] = 'desktop';
+  } else {
+    options['startIn'] = destDirHandle;
+  }
+  const dirHandle = await window.showDirectoryPicker(options);
   destDirHandle = dirHandle;
   getDstDirName().innerHTML = 'Chosen dst directory: ' + dirHandle.name;
 }
