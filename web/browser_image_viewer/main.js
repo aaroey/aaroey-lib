@@ -23,6 +23,8 @@ const MimeType = {
 
 Object.freeze(MimeType);
 
+destDirHandle = null;  // The destination dir to move the selected images to.
+
 // See more mime types in: http://en.wikipedia.org/wiki/List_of_file_signatures
 function imgMimeType(header4B) {
   if (header4B == '89504e47') {
@@ -42,10 +44,7 @@ function imgMimeType(header4B) {
 
 // Please refer to:
 // https://stackoverflow.com/questions/18299806/how-to-check-file-mime-type-with-javascript-before-upload
-function selectImageFile(file, fullRelativePath) {
-  // Adds a custom property (.fullRelativePath) to store the relative path info.
-  file.fullRelativePath = fullRelativePath;
-
+function selectImageFile(file) {
   // Fast path: check file extension.
   if (file.type.includes('image')) {
     // Use any type other than UNKNOWN is fine.
@@ -75,23 +74,17 @@ function selectImageFile(file, fullRelativePath) {
 function elemById(id) {
   return document.getElementById(id);
 }
-function getSelectedTable() {
-  return elemById('selected_imgs_table');
-}
-function getSelectedCnt() {
-  return elemById('num_selected');
+function getMovedCnt() {
+  return elemById('num_moved');
 }
 function getImgTable() {
   return elemById('img_table');
 }
-function getInputDirName() {
-  return elemById('input_dir_name');
+function getSrcDirName() {
+  return elemById('src_dir_name');
 }
-function getSelectedImagesDiv() {
-  return elemById('selected_imgs_div');
-}
-function getToggleSelectedBtn() {
-  return elemById('toggle_selected');
+function getDstDirName() {
+  return elemById('dst_dir_name');
 }
 function getNumColumns() {
   return elemById('num_columns');
@@ -105,79 +98,34 @@ function newRowWithContent(data) {
   return tr;
 }
 
-// Show or hide the selected image names.
-function toggleSelectedNamesState() {
-  let div = getSelectedImagesDiv();
-  let btn = getToggleSelectedBtn();
-  let display = div.style.display;
-  if (display == 'none' || display == '') {
-    div.style.display = 'block';
-    btn.innerHTML = 'Hide selected file names';
-  } else {
-    div.style.display = 'none';
-    btn.innerHTML = 'Show selected file names';
-  }
-}
-
-function copySelectedNamesToClipboard() {
-  // NOTE: using regex need to unescape the html content which is hard.
-  // var text = getSelectedTable().innerHTML;
-  // .replace(/<[^>]+(>|$)/g, "");
-  // text = text.replace(/<tr><td>/g, "'");
-  // text = text.replace(/<\/td><\/tr>/g, "'\n");
-  let table = getSelectedTable();
-  let text = '';
-  for (r of table.rows) {
-    for (c of r.cells) {
-      if (text.length) text += '\n';
-      text += c.textContent;
-    }
-  }
-  navigator.clipboard.writeText(text).then(
-      function() {
-        console.log('Successfully copied selected names to clipboard!');
-        console.log(
-            'Run `rsync -R <files> <dst>` to copy them over to dst folder.');
-      },
-      function(err) { console.error('Failed to copy selected names: ', err); });
-}
-
-function clearSelections() {
-  getSelectedCnt().innerHTML = '0';
-  getSelectedTable().innerHTML = '';
-  let table = getImgTable();
-  for (r of table.rows) {
-    for (c of r.cells) {
-      c.firstChild.classList.remove('selected');
-    }
-  }
-}
-
 // Add or remove an image from the selected image list.
-function toggleImgSelectionState(img, file) {
-  const path = file.fullRelativePath;
-  let selectedCntElem = getSelectedCnt();
-  let selectedCnt = parseInt(selectedCntElem.innerHTML);
-  let table = getSelectedTable();
-  let hasRow = false;
-  for (r of table.rows) {
-    if (r.firstChild.textContent == path) {
-      hasRow = true;
-      table.removeChild(r);
-      img.classList.remove('selected');  // Add css style to mask the image.
-      selectedCntElem.innerHTML = selectedCnt - 1;
-      break;
-    }
+async function moveSelectedImage(img, file) {
+  if (destDirHandle == null) {
+    let msg = 'Destination directory is not set!';
+    alert(msg);
+    throw new Error(msg);
   }
-  if (!hasRow) {
-    img.classList.add('selected');
-    table.appendChild(newRowWithContent(path));
-    selectedCntElem.innerHTML = selectedCnt + 1;
+  let targetDir = null;
+  let movedCntElem = getMovedCnt();
+  let selectedCnt = parseInt(movedCntElem.innerHTML);
+
+  if (file.imgViewerCurDirHandle == file.imgViewerSrcDirHandle) {
+    targetDir = destDirHandle;
+    img.classList.add('selected');  // Add css style to mask the image.
+    movedCntElem.innerHTML = selectedCnt + 1;
+  } else if (file.imgViewerCurDirHandle == destDirHandle) {
+    targetDir = file.imgViewerSrcDirHandle;
+    img.classList.remove('selected');
+    movedCntElem.innerHTML = selectedCnt - 1;
+  } else {
+    throw new Error('Invalid file dir handle!');
   }
+  await file.imgViewerFileHandle.move(targetDir);
+  file.imgViewerCurDirHandle = targetDir;
 }
 
 function fileCmp(lhs, rhs) {
-  return lhs.fullRelativePath.localeCompare(rhs.fullRelativePath);
+  return lhs.imgViewerRelativePath.localeCompare(rhs.imgViewerRelativePath);
 }
 
 // Shows images processed by selectImageFile(), represented as 'imgPromises',
@@ -211,7 +159,7 @@ function displayImages(imgPromises) {
           // work.
           img.src = URL.createObjectURL(f);
           img.width = width;
-          img.onclick = () => { toggleImgSelectionState(img, f); };
+          img.onclick = async () => moveSelectedImage(img, f);
 
           let td = document.createElement('td');
           td.appendChild(img);
@@ -228,7 +176,14 @@ async function processDir(dirHandle, pathPrefix) {
     if (handle.kind == 'file') {
       promises.push(
         handle.getFile().then(
-          (file) => selectImageFile(file, path + '/' + handle.name)
+          (file) => {
+            // Adds custom properties to store extra information.
+            file.imgViewerRelativePath = path + '/' + handle.name;
+            file.imgViewerSrcDirHandle = dirHandle;
+            file.imgViewerCurDirHandle = dirHandle;
+            file.imgViewerFileHandle = handle;
+            return selectImageFile(file)
+          }
         )
       );
     } else if (handle.kind == 'directory') {
@@ -240,14 +195,23 @@ async function processDir(dirHandle, pathPrefix) {
   return promises;
 }
 
-async function handleDir() {
+async function handleSrcDir() {
   const dirHandle = await window.showDirectoryPicker({
     // Set 'id' to an arbitrary identifier to remember the last directory.
     // TODO: doesn't seem to work.
-    id: 'images',
+    id: 'src_dir',
   });
-  getInputDirName().innerHTML = 'Chosen directory: ' + dirHandle.name;
+  getSrcDirName().innerHTML = 'Chosen src directory: ' + dirHandle.name;
   displayImages(await processDir(dirHandle, ''));
+}
+
+async function handleDstDir() {
+  const dirHandle = await window.showDirectoryPicker({
+    id: 'dst_dir',
+    mode: 'readwrite',
+  });
+  destDirHandle = dirHandle;
+  getDstDirName().innerHTML = 'Chosen dst directory: ' + dirHandle.name;
 }
 
 function addEventListener(id, eventName, handler) {
@@ -256,8 +220,6 @@ function addEventListener(id, eventName, handler) {
 }
 
 window.onload = function() {
-  addEventListener('input_dir', 'click', handleDir)
-  addEventListener('toggle_selected', 'click', toggleSelectedNamesState)
-  addEventListener('copy_selected', 'click', copySelectedNamesToClipboard)
-  addEventListener('clear_selected', 'click', clearSelections)
+  addEventListener('src_dir', 'click', handleSrcDir)
+  addEventListener('dst_dir', 'click', handleDstDir)
 };

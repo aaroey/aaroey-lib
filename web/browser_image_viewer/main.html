@@ -9,20 +9,17 @@
     <div id="control_pane" class="control_pane">
       <span>Num Columes: </span>
       <input type="number" id="num_columns" name="Columns" min="1" max="5" value="3">
-      <button type="button" id="input_dir">
-        <span id="input_dir_name">Choose a directory</span>
+      <button type="button" id="src_dir">
+        <span id="src_dir_name">Choose src image directory</span>
       </button>
-      <span>Selected </span>
-      <span id="num_selected">0</span>
+      <button type="button" id="dst_dir">
+        <span id="dst_dir_name">Choose dst directory to move the images to</span>
+      </button>
+      <span>Moved </span>
+      <span id="num_moved">0</span>
       <span>items</span>
-      <button type="button" id="toggle_selected">Show selected file names</button>
-      <button type="button" id="copy_selected">Copy selected file names</button>
-      <button type="button" id="clear_selected">Clear selected files</button>
       <br>
     </div>
     <table id="img_table"></table>
-    <div id="selected_imgs_div" class="selected_imgs_div" style="display: none;">
-      <table id="selected_imgs_table"></table>
-    </div>
   </body>
 </html>
