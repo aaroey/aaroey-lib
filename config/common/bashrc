@@ -813,17 +813,13 @@ already_in_virtualenv() {
 }
 OLD_PYTHONPATH=''
 virtualenv_activate() {
-  if [[ $# -lt 1 ]] || [[ $# -gt 3 ]]; then
-    echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs_option> [<main_pkg>]]'
-    echo '- pkgs_option: specifies which additional pip packages to install in '
-    echo '  the environment. Valid values are: all, basic, none (default).'
-    echo '- main_pkg: the main package to instal, e.g. tensorflow, lingvo, etc.'
+  if [[ $# -lt 1 ]]; then
+    echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs>...]'
     return
   fi
 
-  local vedir="$1"
-  local pkgs_option="${2:-none}"
-  local main_pkg=${3:-''}
+  local vedir="$1"; shift
+  local pkgs="$@"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
@@ -865,21 +861,6 @@ virtualenv_activate() {
 
   # We want to install all the packages in one run so it can resolve the
   # dependencies and find the correct package versions.
-  local pkgs="$main_pkg"
-  if [[ "$pkgs_option" == 'basic' ]] || [[ "$pkgs_option" == 'all' ]]; then
-    # Note @2018/12/06: recordclass, scrapy is not py36 compatible
-    pkgs="$pkgs ipython jupyter numpy"
-  fi
-  if [[ "$pkgs_option" == 'all' ]]; then
-    pkgs="$pkgs
-      mock recordclass Pillow scipy
-      selenium beautifulsoup4 requests scrapy bs4 lxml pymysql
-      Faker
-      img2html pandas nltk soundfile sox matplotlib"
-  fi
-  # if [[ $pyver == '3'* ]]; then
-  #   virtualenv_pip_install $pyver something
-  # fi
   if [[ "$pkgs" ]]; then
     virtualenv_pip_install $pyver $pkgs
   fi
@@ -898,21 +879,19 @@ virtualenv_deactivate() {
   # export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  if [[ $# -gt 2 ]]; then
-    >&2 echo -e "\e[91m=> Usage: vadtmpl [<main-package> [<workspace>]] \e[0m"
+  if [[ $# -lt 1 ]]; then
+    >&2 echo -e "\e[91m=> Usage: vadtmpl <main-package> [<additional-packages>...] \e[0m"
     return
   fi
   set_x
-  local pkg="$1"
-  local pyver=3
+  local pkg="$1"; shift
   local dir=$HOME/tmp
-  local vedir="${2:-$dir/virtualenv_py${pyver}}"
-  local pkgs_option='none'
-  if [[ "$pkg" != '' ]]; then
-    vedir="$vedir=$pkg"
-    pkgs_option='basic'
+  local vedir="$dir/virtualenv_py3=$pkg"
+  if [[ "$pkg" == '' ]]; then
+    pkg=ipython
+    vedir=/tmp/$RANDOM
   fi
-  virtualenv_activate $vedir $pkgs_option $pkg
+  virtualenv_activate $vedir $pkg ipython numpy "$@"
 
   local veworkspace=$dir/default_virtualenv_workspace
   mkdir -p $veworkspace
@@ -923,12 +902,12 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vadempty() { vadtmpl '' /tmp/$RANDOM; }
-vadlv()    { vadtmpl lingvo     "$@"; }
-vadtf()    { vadtmpl tensorflow "$@"; }
-vadpx()    { vadtmpl praxis     "$@"; }
-vadjx()    { vadtmpl 'jax[cpu]' "$@"; }
-vad()      { vadpx   "$@";            }
+vadempty() { vadtmpl ''        ; }
+vadlv()    { vadtmpl lingvo    ; }
+vadtf()    { vadtmpl tensorflow; }
+vadpx()    { vadtmpl praxis    ; }
+vadjx()    { vadtmpl 'jax[cpu]' optax; }
+vad()      { vadpx             ; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
