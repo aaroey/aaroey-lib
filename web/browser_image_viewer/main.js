@@ -102,37 +102,55 @@ function getNumColumns() {
   return elemById('num_columns');
 }
 
-function newRowWithContent(data) {
-  td = document.createElement('td');
-  td.innerHTML = data;
-  tr = document.createElement('tr');
-  tr.appendChild(td);
-  return tr;
+function showError(msg) {
+  console.error(msg);
+  alert(msg);
+  throw new Error(msg);
 }
 
-destDirHandle = null;  // The destination dir to move the selected images to.
+destDirRootHandle = null;  // The destination dir to move the selected images to.
+// Maps the path relative to destDirRootHandle to the nested destination dir
+// handles.
+destDirHandleMap = {};
+
+function setDestDirRootHandle(dirHandle) {
+  destDirRootHandle = dirHandle;
+  destDirHandleMap[''] = dirHandle;
+}
+async function getDestDirHandle(paths) {
+  if (destDirRootHandle == null) {
+    showError('Destination directory is not set!');
+  }
+  // Given a list of nested dir names, starting from the first nested dir in
+  // destination root dir, creates (if necessary) and returns the deepest nested
+  // dir.
+  let key = paths.join('/');
+  if (key in destDirHandleMap) return destDirHandleMap[key];
+  dirHandle = destDirRootHandle;
+  for (const p of paths) {
+    dirHandle = await dirHandle.getDirectoryHandle(p, { create: true });
+  }
+  destDirHandleMap[key] = dirHandle;
+  return dirHandle;
+}
 
 // Add or remove an image from the selected image list.
 async function moveSelectedImage(img, file) {
-  if (destDirHandle == null) {
-    let msg = 'Destination directory is not set!';
-    alert(msg);
-    throw new Error(msg);
+  if (destDirRootHandle == null) {
+    showError('Destination directory is not set!');
   }
   let targetDir = null;
   let movedCntElem = getMovedCnt();
   let movedCnt = parseInt(movedCntElem.innerHTML);
 
   if (file.imgViewerCurDirHandle == file.imgViewerSrcDirHandle) {
-    targetDir = destDirHandle;
+    targetDir = await getDestDirHandle(file.imgViewerParentDirNames);
     img.classList.add('selected');  // Add css style to mask the image.
     movedCntElem.innerHTML = movedCnt + 1;
-  } else if (file.imgViewerCurDirHandle == destDirHandle) {
+  } else {
     targetDir = file.imgViewerSrcDirHandle;
     img.classList.remove('selected');
     movedCntElem.innerHTML = movedCnt - 1;
-  } else {
-    throw new Error('Invalid file dir handle!');
   }
   await file.imgViewerFileHandle.move(targetDir);
   file.imgViewerCurDirHandle = targetDir;
@@ -155,11 +173,13 @@ function displayImages(imgPromises) {
         table.innerHTML = '';
         let i = 0;
         let tr = null;
+        // selectImageFile() will emit null for non-image files, so we filter
+        // them out here.
         let images = results.filter(function(f) { return f != null; });
         images = images.sort(fileCmp);
         for (const f of images) {
           if (f == null) {
-            // selectImageFile() will emit null for non-image files.
+            showError('Invalid file! This should not happen!');
             continue;
           }
           if (i % cols == 0) {
@@ -183,25 +203,41 @@ function displayImages(imgPromises) {
 }
 
 // Recursively add images from sub directories.
-async function processDir(dirHandle, pathPrefix) {
+async function processDir(dirHandle, parentDirs) {
   let promises = [];
-  let path = pathPrefix + '/' + dirHandle.name;
+  // Makes a copy to avoid changing the original list.
+  let dirsIncludingSrc = [...parentDirs];
+  dirsIncludingSrc.push(dirHandle.name);
   for await (const handle of dirHandle.values()) {
     if (handle.kind == 'file') {
       promises.push(
         handle.getFile().then(
           (file) => {
             // Adds custom properties to store extra information.
-            file.imgViewerRelativePath = path + '/' + handle.name;
+
+            // Relative path starting from the first nested directory. This is
+            // currently only used for sorting, so we ignore the top level
+            // source directory since it's the same for all files.
+            pathsWithoutSrc = dirsIncludingSrc.slice(1);
+            file.imgViewerParentDirNames = [...pathsWithoutSrc];
+            pathsWithoutSrc.push(handle.name);
+            file.imgViewerRelativePath = pathsWithoutSrc.join('/');
+
+            // Source dir handle.
             file.imgViewerSrcDirHandle = dirHandle;
+
+            // Current dir handle, can be destination dir handle if moved.
             file.imgViewerCurDirHandle = dirHandle;
+
+            // Handle of this file.
             file.imgViewerFileHandle = handle;
+
             return selectImageFile(file)
           }
         )
       );
     } else if (handle.kind == 'directory') {
-      let subPromises = await processDir(handle, path);
+      let subPromises = await processDir(handle, dirsIncludingSrc);
       promises = promises.concat(subPromises);
     }
     // Skip other file kinds.
@@ -231,7 +267,7 @@ async function handleSrcDir() {
   const dirHandle = await window.showDirectoryPicker(options);
   lastSrcDir = dirHandle;
   getSrcDirName().innerHTML = 'Chosen src directory: ' + dirHandle.name;
-  displayImages(await processDir(dirHandle, ''));
+  displayImages(await processDir(dirHandle, []));
 }
 
 async function handleDstDir() {
@@ -241,13 +277,13 @@ async function handleDstDir() {
     id: 'dst_dir',
     mode: 'readwrite',
   };
-  if (destDirHandle == null) {
+  if (destDirRootHandle == null) {
     options['startIn'] = 'desktop';
   } else {
-    options['startIn'] = destDirHandle;
+    options['startIn'] = destDirRootHandle;
   }
   const dirHandle = await window.showDirectoryPicker(options);
-  destDirHandle = dirHandle;
+  setDestDirRootHandle(dirHandle);
   getDstDirName().innerHTML = 'Chosen dst directory: ' + dirHandle.name;
 }
 
