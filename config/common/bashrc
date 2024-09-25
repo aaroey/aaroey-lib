@@ -936,7 +936,6 @@ import random
 import re
 # import requests  # Not working in ipython3
 import shutil
-import six
 import string
 import sys
 import tempfile
