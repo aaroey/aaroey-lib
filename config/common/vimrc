@@ -81,12 +81,11 @@ if has('mac')
   "   autocmd!
   "   autocmd SourceCmd */Cellar/* :" Do nothing
   " augroup END
-
-  set clipboard=
-else
-  set clipboard=unnamedplus     " Yank to the X window clipboard (Vim 7.3.74+)
-  " set clipboard+=unnamed      " Yank to the clipboard (Vim7.2)
 endif
+
+set clipboard=
+" set clipboard=unnamedplus     " Yank to the X window clipboard (Vim 7.3.74+)
+" set clipboard+=unnamed      " Yank to the clipboard (Vim7.2)
 
 set complete-=i                 " Don't scan included files.
 
@@ -98,6 +97,10 @@ set incsearch                   " Do incremental searching
 
 " For Split screen users: higlight the status line of the active window
 set laststatus=2                " Always display the last status
+
+" Disable mouse
+set mouse=
+" set ttymouse=
 
 set matchpairs=(:),{:},[:],<:>
 set nrformats=alpha,octal,hex
@@ -261,6 +264,7 @@ au FileType tex setlocal indentexpr=
 au BufNewFile,BufFilePre,BufRead *.tex set filetype=tex
 
 """""""""""""""""""""""""""""""" For UltiSnips """""""""""""""""""""""""""""""""
+let g:python3_host_prog = '/usr/bin/python3'
 let g:UltiSnipsExpandTrigger = '<tab>'
 let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'

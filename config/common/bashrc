@@ -155,6 +155,7 @@ findfileslargerthan() {
   head -n ${3:-20} $largest_fileinfo_output
 }
 grep_file_name_or_content() {
+  # Search a directory for a pattern in file names or file content.
   # We can add option -l to grep to show only filename instead of matched content
   # - $1 is '' or 'xargs'. grep file name if '', grep file content if 'xargs'
   # - $2 directory
@@ -174,15 +175,17 @@ grepfile() {
   grep -H -m $NUM_MATCHES_TO_FIND --color "$pattern" "$@"
 }
 fgptmpl() {
+  # Search a list of files or directories for a pattern in file content.
   case "$#" in
-    0) echo 'Usage: fgp [<file_or_dir>...] <file_content_pattern>';;
-    1) grep_file_name_or_content xargs . "$1";;
-    2) grep_file_name_or_content xargs "$1" "$2";;
+    0) ;&
+    1) echo 'Usage: fgptmpl <file_or_dir>... <file_content_pattern>';;
     *)
       until [[ $# -eq 1 ]]; do
         if test -d "$1"; then
+          # If it's a directory, run 'grep' on all the files in it.
           grep_file_name_or_content xargs "$1" "${!#}"
         else
+          # If it's a file, run 'grep' directly.
           grepfile "${!#}" "$1"
         fi
         shift
@@ -191,13 +194,16 @@ fgptmpl() {
   esac
 }
 lgptmpl() {
+  # Search a directory for a pattern in file names.
   case "$#" in
     1) grep_file_name_or_content '' . "$1";;
     2) grep_file_name_or_content '' "$1" "$2";;
-    *) echo 'Usage: lgp [<directory>] <file_name_pattern>';;
+    *) echo 'Usage: lgptmpl [<directory>] <file_name_pattern>';;
   esac
 }
 lgpltemp() {
+  # Search a directory for a pattern in file names, and ls to show all their
+  # attributes.
   # lgp + ls
   if [[ "$#" -ne 1 ]]; then
     echo 'Usage: lgp1 (or lgpl) <file_name_pattern>'
@@ -211,6 +217,8 @@ lgp()    { NUM_MATCHES_TO_FIND=10000; lgptmpl "$@"; }
 lgpl()   { NUM_MATCHES_TO_FIND=10000; lgpltemp "$@"; }
 lgp1()   { NUM_MATCHES_TO_FIND=1;     lgpltemp "$@"; }
 lfgp()   {
+  # Search for a pattern in file content for files that are in ./ and match
+  # given file name pattern.
   NUM_MATCHES_TO_FIND=10000
   case "$#" in
     0) ;&
@@ -220,6 +228,8 @@ lfgp()   {
       echo 'Note that to match special characters like "-" or "*" we need the antislash.'
       return;;
   esac
+  # TODO(laigd): this is very inefficient, should use -o:
+  # https://stackoverflow.com/questions/1133698/using-find-to-locate-files-that-match-one-of-multiple-patterns
   local out="$(find -L . -type f)"
   while (( $# > 1 )); do
     out=$(echo "$out" | grep "$1")
@@ -903,11 +913,10 @@ dav() {
   popd
 }
 vadempty() { vadtmpl ''        ; }
-vadlv()    { vadtmpl lingvo    ; }
 vadtf()    { vadtmpl tensorflow; }
+vadlv()    { vadtmpl lingvo    ; }
 vadpx()    { vadtmpl praxis    ; }
 vadjx()    { vadtmpl 'jax[cpu]' optax; }
-vad()      { vadpx             ; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
@@ -915,18 +924,22 @@ export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtua
 # TODO(laigd): virtualenv doesn't work without this, and will remove the
 # python->python3 alias, not sure why.
 python() { echo -e "\e[93mBe careful, using alias...\e[0m"; python3 "$@"; }
-ipythontmpl() {
+_ipython_tmpl() {
+  $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"
+}
+_ipython_virtualenv() {
   if [[ "$VIRTUAL_ENV" == "" ]]; then
     >&2 echo 'Error: must be run inside a virtual env!'
     return
   fi
-  $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"
+  _ipython_tmpl "$@"
 }
 ipythonvi() {
-  ipythontmpl -i -c "
+  _ipython_virtualenv -i -c "
 import collections
 import datetime
 import functools
+import inspect
 import io
 import itertools
 import logging
@@ -934,15 +947,13 @@ import numpy as np
 import os
 import random
 import re
-# import requests  # Not working in ipython3
 import shutil
 import string
 import sys
 import tempfile
 import time
 import traceback
-$@
-"
+" "$@"
 }
 pytf() {
   local working_dir=${1:-$PWD}
@@ -954,13 +965,19 @@ pytf() {
     fi
   fi
   pushd $working_dir
-  ipythontmpl -i -c "
+  _ipython_virtualenv -i -c "
 import lingvo.compat as tf
 from lingvo.core import py_utils
 " "$@"
   popd
 }
-pyjx() { ipythontmpl -i -c "import jax" "$@"; }
+pyjx() {
+  _ipython_virtualenv -i -c "
+import numpy as np
+import jax
+from jax import numpy as jnp
+" "$@"
+}
 
 ##################################### misc #####################################
 

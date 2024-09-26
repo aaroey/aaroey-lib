@@ -128,29 +128,33 @@ snippet "((# *)?todo)" "TODO" rA
 endsnippet
 
 snippet ,pdb "pdb debug" bA
-import pdb; pdb.set_trace(); print(1)  # pylint: disable-all
+# pyformat: disable
+import pdb; pdb.set_trace(); print(1)  # pylint: disable=all
+# pyformat: enable
 endsnippet
 
 snippet ,stack "print current stacktrace" bA
-import traceback; print('\033[91m=> %s\033[0m' % (''.join(traceback.format_stack())))  # pylint: disable-all
+# pyformat: disable
+import traceback; print('\033[91m=> %s\033[0m' % (''.join(traceback.format_stack())))  # pylint: disable=all
+# pyformat: enable
 endsnippet
 
 snippet ,ithstack "print the ith stacktrace" bA
-import traceback; print(traceback.extract_stack(limit=$0)[0])  # pylint: disable-all
-endsnippet
-
-snippet ,wg "write current tf graph" bA
-with open('/tmp/$1.pbtxt', 'w') as f:
-  f.write(str(tf.get_default_graph().as_graph_def(add_shapes=True)))
-  import sys; sys.exit(1);  # pylint: disable-all
+# pyformat: disable
+import traceback; print(traceback.extract_stack(limit=$0)[0])  # pylint: disable=all
+# pyformat: enable
 endsnippet
 
 snippet ",(qq|exit)" "exit the program" brA
-import sys; sys.exit(1);  # pylint: disable-all
+# pyformat: disable
+import sys; sys.exit(1);  # pylint: disable=all
+# pyformat: enable
 endsnippet
 
 snippet ,sl "sleep" bA
-import time; time.sleep($1);  # pylint: disable-all
+# pyformat: disable
+import time; time.sleep($1);  # pylint: disable=all
+# pyformat: enable
 endsnippet
 
 snippet ,wf "write to file" bA
@@ -169,10 +173,14 @@ tf.disable_eager_execution()
 endsnippet
 
 snippet ,t1 "print time" bA
-import datetime; mytime1 = datetime.datetime.now()  # pylint: disable-all
+# pyformat: disable
+import datetime; mytime1 = datetime.datetime.now()  # pylint: disable=all
+# pyformat: enable
 endsnippet
 
 snippet ,t2 "print time" bA
-import datetime; mytime2 = datetime.datetime.now()  # pylint: disable-all
+# pyformat: disable
+import datetime; mytime2 = datetime.datetime.now()  # pylint: disable=all
 print(f'\033[93m=> start: {mytime1} ; end: {mytime2} ; elapsed : {mytime2-mytime1}\033[0m');
+# pyformat: enable
 endsnippet
