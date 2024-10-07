@@ -81,31 +81,31 @@ prefix = c
 if v:
   prefix = 'var' + c
 if c.lower() == 'a':
-  snip.rv = '\%slpha' % prefix
+  snip.rv = '\\' + f'{prefix}lpha'
 elif c.lower() == 'b':
-  snip.rv = '\%seta' % prefix
+  snip.rv = '\\' + f'{prefix}eta'
 elif c.lower() == 'd':
-  snip.rv = '\%selta' % prefix
+  snip.rv = '\\' + f'{prefix}elta'
 elif c.lower() == 'e':
-  snip.rv = '\%spsilon' % prefix
+  snip.rv = '\\' + f'{prefix}psilon'
 elif c.lower() == 'g':
-  snip.rv = '\%samma' % prefix
+  snip.rv = '\\' + f'{prefix}amma'
 elif c.lower() == 'l':
-  snip.rv = '\%sambda' % prefix
+  snip.rv = '\\' + f'{prefix}ambda'
 elif c.lower() == 'm':
-  snip.rv = '\%su' % prefix
+  snip.rv = '\\' + f'{prefix}u'
 elif c.lower() == 'o':
-  snip.rv = '\%smega' % prefix
+  snip.rv = '\\' + f'{prefix}mega'
 elif c.lower() == 'p':
-  snip.rv = '\%shi' % prefix
+  snip.rv = '\\' + f'{prefix}hi'
 elif c.lower() == 'r':
-  snip.rv = '\%sho' % prefix
+  snip.rv = '\\' + f'{prefix}ho'
 elif c.lower() == 's':
-  snip.rv = '\%sigma' % prefix
+  snip.rv = '\\' + f'{prefix}igma'
 elif c.lower() == 't':
-  snip.rv = '\%sheta' % prefix
+  snip.rv = '\\' + f'{prefix}heta'
 elif c.lower() == 'x':
-  snip.rv = '\%si' % prefix
+  snip.rv = '\\' + f'{prefix}i'
 `
 endsnippet
 

@@ -21,6 +21,9 @@ unbind-key M-p
 # set-option -g mouse-select-pane on
 # set-option -g mouse-select-window on
 
+# default shell
+tmux set-option -g default-shell $SHELL
+
 # color
 set-option -g default-terminal "screen-256color"
 

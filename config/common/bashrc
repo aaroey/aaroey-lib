@@ -95,6 +95,13 @@ init_tmux() {
     cp $AAROEY_LIB_CONFIG_COMMON_DIR/tmux_config_tmpl "$config"
   fi
 }
+init_yapf() {
+  local config_dir=$HOME/.config/yapf
+  if ! [[ -d $config_dir ]]; then
+    mkdir -p $config_dir
+    cp $AAROEY_LIB_CONFIG_COMMON_DIR/yapf_style $config_dir/style
+  fi
+}
 init() {
   init_inputrc
   make_docker_root
@@ -102,6 +109,7 @@ init() {
   init_vim
   init_git
   init_tmux
+  init_yapf
 }
 init
 
@@ -484,6 +492,10 @@ export -f sb clearscreen cls fgp fgp1 lgp lgp1 psgp psgpkill du0 ll datelocal da
 
 ##################################### git ######################################
 gd() { git diff "$@"; }
+gitdiff() {
+  >&2 echo -e "\e[93m=> Usage: gitdiff | gitdiff --no-index <any file1> <any file2> \e[0m"
+  git diff --word-diff=color --word-diff-regex=. "$@"
+}
 gitdiffeditable() {
   if [[ $# -ne 2 ]]; then
     echo 'Usage: gitdiffeditable <version> <file>'
@@ -671,6 +683,7 @@ tmux_restore() {
   }
 
   tmux start-server
+  tmux set-option -g default-shell $SHELL
   local session_count=0
   local window_count=0
   local dimensions="$(_terminal_size)"
@@ -710,7 +723,7 @@ cd() {
     echo 'Usage: cd [<dir>]'
     return
   fi
-  builtin cd "$1" && get_tmux_window_name
+  builtin cd $1 && get_tmux_window_name
 }
 
 ################################# nvidia gpu ###################################
@@ -890,18 +903,17 @@ virtualenv_deactivate() {
 }
 vadtmpl() {
   if [[ $# -lt 1 ]]; then
-    >&2 echo -e "\e[91m=> Usage: vadtmpl <main-package> [<additional-packages>...] \e[0m"
+    >&2 echo -e "\e[91m=> Usage: vadtmpl name [<packages>]... \e[0m"
     return
   fi
   set_x
-  local pkg="$1"; shift
+  local name="$1"; shift
   local dir=$HOME/tmp
-  local vedir="$dir/virtualenv_py3=$pkg"
-  if [[ "$pkg" == '' ]]; then
-    pkg=ipython
+  local vedir="$dir/virtualenv_py3=$name"
+  if [[ "$name" == '' ]]; then
     vedir=/tmp/$RANDOM
   fi
-  virtualenv_activate $vedir $pkg ipython numpy "$@"
+  virtualenv_activate $vedir ipython numpy "$@"
 
   local veworkspace=$dir/default_virtualenv_workspace
   mkdir -p $veworkspace
@@ -912,11 +924,8 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vadempty() { vadtmpl ''        ; }
-vadtf()    { vadtmpl tensorflow; }
-vadlv()    { vadtmpl lingvo    ; }
-vadpx()    { vadtmpl praxis    ; }
-vadjx()    { vadtmpl 'jax[cpu]' optax; }
+vadempty() { vadtmpl '' ; }
+vadjx()    { vadtmpl jax 'jax[cpu]' optax; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
