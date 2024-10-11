@@ -16,7 +16,7 @@ def cleanup_images(
         src_root_dir,
         dst_root_dir,
         size_threshold=20 * 1024,
-        regex_patterns=None,
+        delete_regex_patterns=None,
         keep_dir_structture=True,
 ):  # size in bytes
   """Walks through a directory and moves files that meet certain criteria.
@@ -31,7 +31,7 @@ def cleanup_images(
   if not os.path.exists(dst_root_dir):
     os.makedirs(dst_root_dir)
 
-  regexes = [re.compile(p) for p in (regex_patterns or ())]
+  regexes = [re.compile(p) for p in (delete_regex_patterns or ())]
   move_fn = utils.move
   # move_fn = fake_move_fn
 
@@ -90,14 +90,17 @@ def cleanup_images(
 # vadjx
 # python cleanup.py
 cleanup_images(
-    src_root_dir='/Users/laigd/Documents/images/eee/网页/74',
-    dst_root_dir='/Users/laigd/.Trash/1',
+    # src_root_dir='/Users/laigd/Documents/images/eee/网页',
+    src_root_dir='/Users/laigd/.Trash/1',
+    dst_root_dir='/Users/laigd/.Trash/2',
     size_threshold=20 * 1024,
-    regex_patterns=(
-        r'.*\.gif$',
+    delete_regex_patterns=(
+        # Don't remove gif! Small gif should be handled by size-based rule!
+        # r'.*\.gif$',
         r'.*_avatar_.*\.jpg$',
         r'.*\.php$',
         r'^js(.[123].)?$',
+        r'^f(\(1\))?\.txt$',
     ),
     keep_dir_structture=False,
 )

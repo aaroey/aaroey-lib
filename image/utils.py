@@ -7,6 +7,16 @@ import random
 import re
 import shutil
 import string
+from urllib.parse import quote
+
+
+def should_skip(filename: str):
+  for suffix in (
+      '.ds_store', '.py', '.html', '.json', '.txt', '.mp4', '.avi', '.mov'
+  ):
+    if filename.lower().endswith(suffix):
+      return True
+  return False
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -17,22 +27,10 @@ class ImageFileMeta:
   h: int
 
 
-def should_skip(filename: str):
-  if filename.endswith('.DS_Store'):
-    return True
-  if filename.endswith('.py'):
-    return True
-  if filename.endswith('.html'):
-    return True
-  if filename.endswith('.json'):
-    return True
-  if filename.endswith('.txt'):
-    return True
-  return False
-
-
-def generate_html(grouped_images: dict[str, list[ImageFileMeta]],
-                  scale_image_by_width: bool=False):
+def generate_html(
+    grouped_images: dict[str, list[ImageFileMeta]],
+    scale_image_by_width: bool = False
+):
   """Generates an HTML table with image links grouped by hash of the image."""
   html = """
   <!DOCTYPE html>
@@ -65,7 +63,7 @@ def generate_html(grouped_images: dict[str, list[ImageFileMeta]],
       width = 100
       if scale_image_by_width:
         width *= file.w / first_file.w
-      html += f'<img src="{file.relative_path}" width="{int(width)}px" data-meta="{file.w} x {file.h}; {file.size}" /> '
+      html += f'<img src="{quote(file.relative_path)}" width="{int(width)}px" data-meta="{file.w} x {file.h}; {file.size}" /> '
     html += '</td></tr>'
 
   html += """
@@ -78,5 +76,5 @@ def generate_html(grouped_images: dict[str, list[ImageFileMeta]],
 
 
 def move(src, dst):
-  assert not os.path.exists(dst)
+  assert not os.path.exists(dst), f'{dst} already exist'
   shutil.move(src, dst)

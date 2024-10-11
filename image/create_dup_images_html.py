@@ -1,6 +1,7 @@
 import abc
 import base64
 import collections
+import dataclasses
 import hashlib
 import dataclasses
 import json
@@ -16,6 +17,7 @@ import utils
 
 @typing.runtime_checkable
 class Deduper(typing.Protocol):
+
   @property
   @abc.abstractmethod
   def name(self) -> str:
@@ -53,25 +55,39 @@ class DeduperMd5:
     return file.relative_path
 
 
+@dataclasses.dataclass(kw_only=True)
 class DeduperSimhash:
-  name: str = 'simhash64x4'
+  thumbnail_size: int = 8
+  gray_scale: int = 4
+  _gray_scale_bits: int = dataclasses.field(init=False)
+
+  def __post_init__(self):
+    assert self.thumbnail_size >= 4 and self.thumbnail_size <= 8, f'{self.thumbnail_size=}'
+    assert self.gray_scale in (2, 4), f'{self.gray_scale=}'
+    self._gray_scale_bits = (2 if self.gray_scale == 4 else 1)
+
+  @property
+  def name(self) -> str:
+    size = self.thumbnail_size**2
+    return f'simhash{size}x{self.gray_scale}'
 
   def compute_hash(self, file_path):
     try:
       img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
       if img is None:
         raise ValueError(f"Could not read image from: {file_path}")
-      img = cv2.resize(img, (8, 8))  # Resize to 8x8
+      img = cv2.resize(img, (self.thumbnail_size, self.thumbnail_size))
 
       # Convert to 4-level grayscale (0, 64, 128, 192)
+      # img = img // 64
       m1 = np.min(img)
       m2 = np.max(img)
-      img = (img-m1)//((m2-m1)//4)
-      # img = img // 64
+      img = (img - m1) // ((m2 - m1) // self.gray_scale)
 
-      # Convert the 8x8 matrix to a 128-bit binary string
+      # Convert the NxN matrix to a binary string. E.g. 8x8 with 4 grayscale
+      # will be converted to 128bit binary string.
       binary_string = ''.join(format(i, '02b') for i in img.flatten())
-      integer_representation = int(binary_string, 2)
+      integer_representation = int(binary_string, self._gray_scale_bits)
       return hex(integer_representation)
     except Exception as e:
       print(f'\033[91m=> Failed to simhash {file_path}: {e}\033[0m')
@@ -82,10 +98,8 @@ class DeduperSimhash:
 
 
 def maybe_move(
-        hash_to_files: dict[str, utils.ImageFileMeta],
-        deduper: Deduper,
-        src_root_dir: str,
-        dst_root_dir: str | None
+    hash_to_files: dict[str, utils.ImageFileMeta], deduper: Deduper,
+    src_root_dir: str, dst_root_dir: str | None
 ):
   for files in hash_to_files.values():
     files.sort(key=deduper.key_fn)
@@ -116,13 +130,21 @@ def dedup_files(src_root_dir: str, dst_root_dir: str | None, mode: str):
   """Walks through the directory, computes MD5s, and generates the HTML."""
   if mode == 'md5':
     deduper = DeduperMd5()
-  elif mode == 'sim':
-    deduper = DeduperSimhash()
+  elif mode == 'sim64x4':
+    deduper = DeduperSimhash(thumbnail_size=8, gray_scale=4)
+  elif mode == 'sim49x4':
+    deduper = DeduperSimhash(thumbnail_size=7, gray_scale=4)
+  elif mode == 'sim36x4':
+    deduper = DeduperSimhash(thumbnail_size=6, gray_scale=4)
+  elif mode == 'sim25x4':
+    deduper = DeduperSimhash(thumbnail_size=5, gray_scale=4)
+  elif mode == 'sim16x4':
+    deduper = DeduperSimhash(thumbnail_size=4, gray_scale=4)
   else:
     raise ValueError(f'Invalid mode: {mode}')
 
   hash_json = os.path.join(src_root_dir, f'hash_{deduper.name}.json')
-  file_to_hash_loaded = dict()  # Maps (str, int) to hash str
+  file_to_hash_loaded = dict()  # Maps (path, size) to hash str
   if os.path.exists(hash_json):
     with open(hash_json, 'r') as f:
       file_to_hash_loaded = json.load(f)
@@ -163,12 +185,15 @@ def dedup_files(src_root_dir: str, dst_root_dir: str | None, mode: str):
       file_to_hash_new[key] = hash_value
       relative_path = os.path.relpath(fullpath, src_root_dir)
       hash_to_files[hash_value].append(
-          utils.ImageFileMeta(relative_path=relative_path,
-                              size=size, w=width, h=height))
+          utils.ImageFileMeta(
+              relative_path=relative_path, size=size, w=width, h=height
+          )
+      )
 
   # Move the duplicates with largest filename to dst_root_dir.
-  updated_hash_to_files = maybe_move(hash_to_files, deduper,
-                                     src_root_dir, dst_root_dir)
+  updated_hash_to_files = maybe_move(
+      hash_to_files, deduper, src_root_dir, dst_root_dir
+  )
 
   # Generate the html for comparison.
   html = utils.generate_html(updated_hash_to_files, scale_image_by_width=True)
@@ -187,9 +212,11 @@ if __name__ == '__main__':
   # src_root_dir = '/tmp/md5test'
 
   dst_root_dir = '/Users/laigd/.Trash/2'
-  # dst_root_dir = None
+  dst_root_dir = None
 
   mode = 'md5'
-  mode = 'sim'
+  mode = 'sim64x4'  # Verified.
+  mode = 'sim49x4'  # Verified, 1/200 dups are similar images (error).
+  mode = 'sim36x4'  # TBD
 
   dedup_files(src_root_dir=src_root_dir, dst_root_dir=dst_root_dir, mode=mode)
