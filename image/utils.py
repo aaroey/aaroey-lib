@@ -11,9 +11,15 @@ from urllib.parse import quote
 
 
 def should_skip(filename: str, size: int = None):
+  # yapf: disable
   for suffix in (
-      '.ds_store', '.py', '.html', '.json', '.txt', '.mp4', '.avi', '.mov'
+      '.ds_store',  # System files
+      '.html', '.json', '.py',  # Developer files
+      '.avi', '.mov', '.mp4',  # Videos
+      '.txt',  # Notes
+      '.webp',  # opencv-python / cv2 can't read webp
   ):
+    # yapf: enable
     if filename.lower().endswith(suffix):
       return True
   if size is not None and size > 10 * 2**20:  # Ignore large files.

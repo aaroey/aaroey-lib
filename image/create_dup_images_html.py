@@ -180,9 +180,19 @@ def compute_hashes(
       # Get from loaded or {}.
       hash_values = file_key_to_hash_loaded.get(key, {})
       file_bytes = open(fullpath, 'rb').read()
+      failed_dedupers = []  # Avoid running the same deduper multiple times.
+
       for hash_type, deduper in hash_type_to_deduper.items():
+        if deduper in failed_dedupers:
+          continue
         if hash_type not in hash_values:
-          hash_values.update(deduper.compute_hashes(fullpath, file_bytes))
+          # print(f'\033[93m=> Handling type {hash_type} for {fullpath}\033[0m')
+          hashes = deduper.compute_hashes(fullpath, file_bytes)
+          if hashes:
+            hash_values.update(hashes)
+          else:
+            failed_dedupers.append(deduper)
+
       file_key_to_hash_new[key] = hash_values
 
       if len(hash_values) != len(hash_type_to_deduper):
