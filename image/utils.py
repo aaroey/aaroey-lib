@@ -7,7 +7,32 @@ import random
 import re
 import shutil
 import string
+import sys
+from typing import Any
 from urllib.parse import quote
+
+
+def load_json_or(path: str, default_value: Any):
+  loaded = default_value
+  if os.path.exists(path):
+    with open(path, 'r') as f:
+      loaded = json.load(f)
+  return loaded
+
+
+def dump_json(path: str, value: Any):
+  with open(path, 'w') as f:
+    json.dump(value, f, indent=2)
+
+
+def make_dataclass(*args, **kwargs):
+  v = sys.version_info
+  ver = f'{v.major}.{v.minor}.{v.micro}'
+  print(f'\033[93m=> python {ver=}\033[0m')
+  assert v.major == 3
+  if v.minor <= 9:
+    return dataclasses.dataclass(*args, **kwargs)
+  return dataclasses.dataclass(*args, kw_only=True, **kwargs)
 
 
 def should_skip(filename: str, size: int = None):
@@ -27,31 +52,34 @@ def should_skip(filename: str, size: int = None):
   return False
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
+@make_dataclass(frozen=True)
 class ImageFileMeta:
   relative_path: str
   size: int
   w: int
   h: int
+  meta: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
 def generate_html(
     grouped_images: dict[str, list[ImageFileMeta]],
-    scale_image_by_width: bool = False
+    cell_width: int = 100,
+    scale_image_by_width: bool = False,
+    check_first_image_path: bool = True,
 ):
   """Generates an HTML table with image links grouped by hash of the image."""
   html = """
   <!DOCTYPE html>
   <html>
   <head>
-  <title>File Hash Mappings</title>
+  <title>File Group Mappings</title>
   </head>
   <body>
-  <h1>File Hash Mappings</h1>
+  <h1>File Group Mappings</h1>
   <table>
   <thead>
     <tr>
-      <th>Hash value</th>
+      <th>Group Name</th>
       <th>Files</th>
     </tr>
   </thead>
@@ -65,13 +93,14 @@ def generate_html(
 
     # First file must not be moved, i.e. its path must be relative!
     first_file = file_list[0]
-    assert not first_file.relative_path.startswith('/')
+    if check_first_image_path:
+      assert not first_file.relative_path.startswith('/')
 
     for file in file_list:
-      width = 100
+      width = cell_width
       if scale_image_by_width:
         width *= file.w / first_file.w
-      html += f'<img src="{quote(file.relative_path)}" width="{int(width)}px" data-meta="{file.w} x {file.h}; {file.size}" /> '
+      html += f'<img src="{quote(file.relative_path)}" width="{int(width)}px" data-meta="{file.meta}" /> '
     html += '</td></tr>'
 
   html += """

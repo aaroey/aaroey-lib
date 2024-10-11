@@ -3,7 +3,6 @@ import base64
 import collections
 import dataclasses
 import hashlib
-import dataclasses
 import json
 import os
 import typing
@@ -229,12 +228,11 @@ def dedup_files(
       assert hash_type not in hash_type_to_deduper, f'{hash_type} already exists.'
       hash_type_to_deduper[hash_type] = deduper
 
-  file_json_hash = os.path.join(src_root_dir, f'hash_all.json')
+  hash_json_file_path = os.path.join(src_root_dir, f'hash_all.json')
   # Maps (file_path, file_size) to {hash_type: hash_value} dict.
-  file_key_to_hash_loaded = collections.defaultdict(dict)
-  if os.path.exists(file_json_hash):
-    with open(file_json_hash, 'r') as f:
-      file_key_to_hash_loaded = json.load(f)
+  file_key_to_hash_loaded = utils.load_json_or(
+      hash_json_file_path, collections.defaultdict(dict)
+  )
 
   # Computes the hashes.
   file_key_to_hash_new, hash_to_metas = compute_hashes(
@@ -242,8 +240,7 @@ def dedup_files(
   )
 
   # Save the hash to avoid recomputation next time.
-  with open(file_json_hash, 'w') as f:
-    json.dump(file_key_to_hash_new, f, indent=2)
+  utils.dump_json(hash_json_file_path, file_key_to_hash_new)
 
   # Move the duplicates with largest filename to dst_root_dir.
   if hash_type_to_move is not None:
@@ -258,12 +255,16 @@ def dedup_files(
     html = utils.generate_html(
         hash_to_metas[hash_type], scale_image_by_width=True
     )
-    html_file = os.path.join(src_root_dir, f'image_mapping_{hash_type}.html')
-    with open(html_file, 'w') as f:
+    html_file_path = os.path.join(
+        src_root_dir, f'image_mapping_{hash_type}.html'
+    )
+    with open(html_file_path, 'w') as f:
       f.write(html)
 
 
 if __name__ == '__main__':
+  print(f'\033[92m=> Need to run in the vadjx environment.\033[0m')
+
   src_root_dir = '/Users/laigd/Documents/images/eee/网页'
 
   dst_root_dir = '/Users/laigd/.Trash/2'
