@@ -151,16 +151,24 @@ vimultisnips() { vim $AAROEY_LIB_DIR/config/common/ultisnips/* "$@"; }
 clearscreen() { clear && echo -en "\e[3J"; }
 cls() { clearscreen; }
 findfileslargerthan() {
+  >&2 echo -e "\e[93m=> Usage: findfileslargerthan <dir> [<size>=50M [<first_n>=20]] \e[0m"
+  >&2 echo -e "\e[93m=> Finding the first \$3 files inside directory \$1 which are larger than \$2 and sort them by size ...\e[0m"
+  if [[ "$#" -lt 1 ]] || [[ "$#" -gt 3 ]]; then
+    return
+  fi
+  local dir="$1"; shift
+  local size="${1:-50M}"; shift
+  local first_n="${1:-20}"; shift
+
   local filename_output=$(mktemp /tmp/XXXXXX)
   local largest_fileinfo_output=$(mktemp /tmp/XXXXXX)
-
-  >&2 echo -e "\e[93m=> Finding the first \$3 files inside directory \$1 which are larger than \$2 and sort them by size ...\e[0m"
   >&2 echo -e "\e[93m=> Writing large file names output to $filename_output ...\e[0m"
-  find "${1:-$HOME}" -type f -size +"${2:-50M}" -ls | sort -nr -k 7,7 | sed 's/^[^/]*//' > $filename_output
+
+  find "$dir" -type f -size +"$size" -ls | sort -nr -k 7,7 | sed 's/^[^/]*//' > $filename_output
 
   >&2 echo -e "\e[93m=> Writing largest file info output to $largest_fileinfo_output ...\e[0m"
   (while IFS= read -r i; do ls -alh -color "$i"; done) < $filename_output > $largest_fileinfo_output
-  head -n ${3:-20} $largest_fileinfo_output
+  head -n $first_n $largest_fileinfo_output
 }
 grep_file_name_or_content() {
   # Search a directory for a pattern in file names or file content.
@@ -472,6 +480,7 @@ export_ld_library_path() {
 }
 diffxxd() {
   if [[ "$#" -ne 2 ]]; then
+    >&2 echo 'Make a hex dump of two files and diff the dumps.'
     >&2 echo 'Usage: diffxxd <file1> <file2>'
     return 1
   fi
