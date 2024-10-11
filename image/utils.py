@@ -10,12 +10,14 @@ import string
 from urllib.parse import quote
 
 
-def should_skip(filename: str):
+def should_skip(filename: str, size: int = None):
   for suffix in (
       '.ds_store', '.py', '.html', '.json', '.txt', '.mp4', '.avi', '.mov'
   ):
     if filename.lower().endswith(suffix):
       return True
+  if size is not None and size > 10 * 2**20:  # Ignore large files.
+    return True
   return False
 
 

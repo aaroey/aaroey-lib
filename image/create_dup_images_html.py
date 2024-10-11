@@ -159,10 +159,11 @@ def dedup_files(src_root_dir: str, dst_root_dir: str | None, mode: str):
       if num_processed % 1000 == 0:
         print(f'\033[93m=> Processed {num_processed} files.\033[0m')
 
-      if utils.should_skip(filename):
-        continue
       fullpath = os.path.join(cur_path, filename)
       size = os.path.getsize(fullpath)
+      if utils.should_skip(fullpath, size):
+        continue
+
       # Add file size to key to reduce the chance of collisions when loading the
       # hash file after an image is removed and a new image is added with the
       # same name.
