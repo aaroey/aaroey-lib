@@ -836,17 +836,22 @@ already_in_virtualenv() {
 }
 OLD_PYTHONPATH=''
 virtualenv_activate() {
-  if [[ $# -lt 1 ]]; then
-    echo 'Usage: virtualenv_activate <virtualenv_dir> [<pkgs>...]'
+  if [[ $# -lt 2 ]]; then
+    echo 'Usage: virtualenv_activate <python_version> <virtualenv_dir> [<pkgs>...]'
     return
   fi
 
+  local pyver="${1:-3}"; shift
   local vedir="$1"; shift
   local pkgs="$@"
   if [[ "$vedir" == '' ]]; then
     echo 'virtualenv dir must not be empty!'
     return
   fi
+
+  # Change the PYTHONPATH:
+  OLD_PYTHONPATH=$PYTHONPATH
+  export PYTHONPATH=$(python$pyver -c "import sys; site_packages = next(p for p in sys.path if 'site-packages' in p); print(site_packages)")
 
   case "$(uname -s)" in
       Linux*)  vedir="$(readlink -f $vedir)";;
@@ -862,7 +867,6 @@ virtualenv_activate() {
     return $VIRTUALENV_ALREADY_ACTIVATED_ERROR_CODE
   fi
 
-  local pyver=${pyver:-3}
   local activate_file="$vedir/bin/activate"
 
   # This is very important! If not using a new dir, when importing modules,
@@ -888,10 +892,6 @@ virtualenv_activate() {
     virtualenv_pip_install $pyver $pkgs
   fi
 
-  # Change the PYTHONPATH:
-  # OLD_PYTHONPATH=$PYTHONPATH
-  # export PYTHONPATH=$(python -c "import sys; site_packages = next(p for p in sys.path if 'site-packages' in p); print(site_packages)")
-
   popd
   echo '--> PYTHONPATH:' $PYTHONPATH
   echo '--> PATH:' $PATH
@@ -899,21 +899,22 @@ virtualenv_activate() {
 }
 virtualenv_deactivate() {
   deactivate
-  # export PYTHONPATH=$OLD_PYTHONPATH
+  export PYTHONPATH=$OLD_PYTHONPATH
 }
 vadtmpl() {
-  if [[ $# -lt 1 ]]; then
-    >&2 echo -e "\e[91m=> Usage: vadtmpl name [<packages>]... \e[0m"
+  if [[ $# -lt 2 ]]; then
+    >&2 echo -e "\e[91m=> Usage: vadtmpl python_version name [<packages>]... \e[0m"
     return
   fi
   set_x
+  local pyver="$1"; shift
   local name="$1"; shift
   local dir=$HOME/tmp
   local vedir="$dir/virtualenv_py3=$name"
   if [[ "$name" == '' ]]; then
     vedir=/tmp/$RANDOM
   fi
-  virtualenv_activate $vedir ipython numpy "$@"
+  virtualenv_activate "$pyver" "$vedir" ipython numpy "$@"
 
   local veworkspace=$dir/default_virtualenv_workspace
   mkdir -p $veworkspace
@@ -924,8 +925,10 @@ dav() {
   virtualenv_deactivate
   popd
 }
-vadempty() { vadtmpl '' ; }
-vadjx()    { vadtmpl jax 'jax[cpu]' optax; }
+vadempty() { vadtmpl '' '' ; }
+vadlatest() { vadtmpl '' latest ; }
+vadjx()    { vadtmpl 3.12 jax 'jax[cpu]' optax; }
+vadtf()    { vadtmpl 3.9 tf tensorflow_macos pillow numpy; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
