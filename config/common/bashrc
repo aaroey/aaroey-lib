@@ -937,7 +937,7 @@ dav() {
 vadempty() { vadtmpl '' '' ; }
 vadlatest() { vadtmpl '' latest ; }
 vadjx()    { vadtmpl 3.12 jax 'jax[cpu]' optax; }
-vadtf()    { vadtmpl 3.9 tf tensorflow_macos pillow numpy; }
+vadtf()    { vadtmpl 3.9 tf tensorflow tensorflow-estimator tensorflow-hub pillow numpy opencv-python yapf black autopep8; }
 
 export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
 
