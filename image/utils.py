@@ -66,6 +66,7 @@ def generate_html(
     cell_width: int = 100,
     scale_image_by_width: bool = False,
     check_first_image_path: bool = True,
+    num_images_in_group_to_show_thres: int = 2,
 ):
   """Generates an HTML table with image links grouped by hash of the image."""
   html = """
@@ -87,7 +88,7 @@ def generate_html(
   """
 
   for key, file_list in grouped_images.items():
-    if len(file_list) == 1:
+    if len(file_list) < num_images_in_group_to_show_thres:
       continue  # Don't show groups that only have one file.
     html += f'<tr><td>{key}</td><td>'
 

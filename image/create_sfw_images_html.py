@@ -29,17 +29,20 @@ def should_skip(filename: str):
 
 
 def gen_html(
-    src_root_dir: str, model_key: str, html_index: int,
+    src_root_dir: str, dir_suffix: str, html_suffix: str,
     meta_dict: dict[str, list[utils.ImageFileMeta]]
 ):
-  html_dir = os.path.join(src_root_dir, f'score_html-{model_key}')
+  html_dir = os.path.join(src_root_dir, f'score_html-{dir_suffix}')
   if not os.path.exists(html_dir):
     os.makedirs(html_dir)
 
   html = utils.generate_html(
-      grouped_images=meta_dict, cell_width=400, check_first_image_path=False
+      grouped_images=meta_dict,
+      cell_width=400,
+      check_first_image_path=False,
+      num_images_in_group_to_show_thres=1,
   )
-  html_file_path = os.path.join(html_dir, f'image_score-{html_index}.html')
+  html_file_path = os.path.join(html_dir, f'image_score-{html_suffix}.html')
   with open(html_file_path, 'w') as f:
     f.write(html)
 
@@ -50,7 +53,8 @@ class _FileInfo:
   size: int
   key: str  # Key of the prediction cache.
   metrics: Any = None
-  score: float = 0
+  score: float = 0  # Nsfw score, used for grouping.
+  meta_key: str = ''  # Key of the html group, used for grouping
 
   def to_meta(self):
     return utils.ImageFileMeta(
@@ -59,8 +63,48 @@ class _FileInfo:
         meta=(self.metrics, self.score),
     )
 
-  def meta_key(self):
-    return f'score-{self.score}'
+  def __lt__(self, rhs):
+    key = lambda info: (info.meta_key, info.score, info.size)
+    return key(self) < key(rhs)
+
+
+def write_htmls(
+    all_infos: list[_FileInfo], imgs_per_row: int, predictor_name: str
+):
+  html_index = 0
+  cur_row = None
+  cur_meta_key = None
+  num_row_elems = imgs_per_row + 1
+  meta_dict = collections.defaultdict(list)
+  for info in all_infos:
+    if num_row_elems >= imgs_per_row or info.meta_key != cur_meta_key:
+      if len(meta_dict) >= 100 or (meta_dict and info.meta_key != cur_meta_key):
+        # Each html contains at most 100 rows.
+        gen_html(
+            src_root_dir,
+            dir_suffix=predictor_name,
+            html_suffix=f'{cur_meta_key}-{html_index}',
+            meta_dict=meta_dict,
+        )
+        meta_dict.clear()
+        html_index += 1
+
+      # Starts a new row.
+      row_key = f'{info.meta_key}-{info.score}'
+      cur_row = meta_dict[row_key]
+      cur_meta_key = info.meta_key
+      num_row_elems = 0
+
+    cur_row.append(info.to_meta())
+    num_row_elems += 1
+
+  if meta_dict:
+    gen_html(
+        src_root_dir,
+        dir_suffix=predictor_name,
+        html_suffix=f'{cur_meta_key}-{html_index}',
+        meta_dict=meta_dict,
+    )
 
 
 class Predictor(Protocol):
@@ -75,7 +119,7 @@ class Predictor(Protocol):
     ...
 
   @abc.abstractmethod
-  def score_and_update(self, info: Any) -> None:
+  def score_and_update(self, info: _FileInfo) -> None:
     ...
 
 
@@ -101,9 +145,10 @@ class NsfwPredictor(Predictor):
   def run(self, imgs):
     return predict.classify(self.model, imgs, self.img_dim)
 
-  def score_and_update(self, info: Any):
+  def score_and_update(self, info: _FileInfo):
     k, max_value = max(info.metrics.items(), key=lambda item: item[1])
     info.score = max_value * _CLASS_WEIGHT[k]
+    info.meta_key = f'score-{info.score}'
 
 
 @utils.make_dataclass(frozen=True)
@@ -125,24 +170,52 @@ class NudePredictor(Predictor):
     res = self.detector.detect_batch(imgs)
     return {k: v for k, v in zip(imgs, res)}
 
-  def score_and_update(self, info: Any):
-    score = 0
+  def score_and_update(self, info: _FileInfo):
     image = None
     if self.dst_root_dir:
       image = cv2.imread(info.fullpath)
 
+    score = 0
+    has_porn, has_breast, has_sexy, has_face = [False] * 4
     for metric in info.metrics:
       cls = metric['class']
       sc = metric['score']
       if image is not None:
+        # If in debug mode, draw the bounding boxes.
         self._draw_box(image, metric['box'], f'{cls}: {sc}')
-      if cls in ('FEMALE_GENITALIA_EXPOSED', 'ANUS_EXPOSED'):
-        score += sc * 100
-      elif cls in ('FEMALE_BREAST_EXPOSED', 'BUTTOCKS_EXPOSED'):
-        score += sc * 10
+
+      if cls in (
+          'FEMALE_GENITALIA_EXPOSED', 'ANUS_EXPOSED', 'BUTTOCKS_EXPOSED'
+      ):
+        score += (1 + sc) * 100
+        has_porn = True
+      elif cls in ('FEMALE_BREAST_EXPOSED',):
+        score += (1 + sc) * 10
+        has_breast = True
+      elif cls in (
+          'FEMALE_GENITALIA_COVERED', 'ANUS_COVERED', 'BUTTOCKS_COVERED'
+      ):
+        score += (1 + sc) * 5
+        has_sexy = True
       elif cls in ('FACE_FEMALE',):
+        score += (1 + sc) * 1
+        has_face = True
+      else:
         score += sc
 
+    info.score = score
+    if has_porn:
+      info.meta_key = '4-porn'
+    elif has_breast:
+      info.meta_key = '3-breast'
+    elif has_sexy:
+      info.meta_key = '2-sexy'
+    elif has_face:
+      info.meta_key = '1-face'
+    else:
+      info.meta_key = '0-neutral'
+
+    # If in debug mode, dump the image with bounding boxes.
     if image is not None:
       dst_path = utils.move_with_roots(
           self.src_root_dir,
@@ -152,7 +225,6 @@ class NudePredictor(Predictor):
       )
       info.fullpath = dst_path
       cv2.imwrite(dst_path, image)
-    info.score = score
 
   def _draw_box(
       self,
@@ -247,30 +319,9 @@ def run(
   if _DEBUG:
     for info in all_infos:
       print(f'\033[93m=> {info}\033[0m')
-  all_infos.sort(key=lambda info: (info.score, info.size))
+  all_infos.sort()
 
-  html_index = 0
-  cur_row = None
-  num_row_elems = imgs_per_row + 1
-  meta_dict = collections.defaultdict(list)
-  for info in all_infos:
-    if num_row_elems >= imgs_per_row:
-      if len(meta_dict) >= 100:
-        # Each html contains at most 100 rows.
-        gen_html(src_root_dir, predictor.name, html_index, meta_dict)
-        meta_dict.clear()
-        html_index += 1
-
-      # Starts a new row.
-      row_key = info.meta_key()
-      cur_row = meta_dict[row_key]
-      num_row_elems = 0
-
-    cur_row.append(info.to_meta())
-    num_row_elems += 1
-
-  if meta_dict:
-    gen_html(src_root_dir, predictor.name, html_index, meta_dict)
+  write_htmls(all_infos, imgs_per_row, predictor.name)
 
 
 if __name__ == '__main__':
