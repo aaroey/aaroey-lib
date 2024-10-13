@@ -32,7 +32,7 @@ def cleanup_images(
     os.makedirs(dst_root_dir)
 
   regexes = [re.compile(p) for p in (delete_regex_patterns or ())]
-  move_fn = utils.move
+  move_fn = utils.safe_move
   # move_fn = fake_move_fn
 
   for cur_path, _, files in os.walk(src_root_dir):

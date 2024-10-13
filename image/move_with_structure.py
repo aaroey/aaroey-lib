@@ -5,7 +5,7 @@ import utils
 
 
 def move_files(src_root_dir: str, dst_root_dir: str, debug: bool):
-  """Walks through the directory, computes MD5s, and generates the HTML."""
+  """Move files from src_root_dir to dst_root_dir with the same dir structure."""
   i = 0
   for cur_dir, _, files in os.walk(src_root_dir):
     for file in files:
@@ -21,10 +21,10 @@ def move_files(src_root_dir: str, dst_root_dir: str, debug: bool):
         print(f'\033[93m=> {src_path}\033[0m')
         print(f'{dst_path}')
         i += 1
-        if i > 100:
+        if i > 30:
           return
       else:
-        utils.move(src_path, dst_path)
+        utils.safe_move(src_path, dst_path)
 
 
 if __name__ == '__main__':

@@ -54,10 +54,10 @@ def should_skip(filename: str, size: int = None):
 
 @make_dataclass(frozen=True)
 class ImageFileMeta:
-  relative_path: str
+  relative_path: str  # Relative path to the src/dst root dir.
   size: int
-  w: int
-  h: int
+  w: int = 1
+  h: int = 1
   meta: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
@@ -112,6 +112,17 @@ def generate_html(
   return html
 
 
-def move(src, dst):
-  assert not os.path.exists(dst), f'{dst} already exist'
+def safe_move(src, dst):
+  if os.path.exists(dst):
+    raise ValueError(f'{dst} already exist')
   shutil.move(src, dst)
+
+
+def move_with_roots(src_root_dir, dst_root_dir, relpath, move_fn=safe_move):
+  src_path = os.path.join(src_root_dir, relpath)
+  dst_path = os.path.join(dst_root_dir, relpath)
+  dst_dir = os.path.dirname(dst_path)
+  if not os.path.exists(dst_dir):
+    os.makedirs(dst_dir)
+  move_fn(src_path, dst_path)
+  return dst_path

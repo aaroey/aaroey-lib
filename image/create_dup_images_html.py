@@ -138,12 +138,9 @@ def maybe_move(
   for key, files in hash_to_metas.items():
     moved_files = [files[0]]  # This is the best file, don't move it.
     for file in files[1:]:
-      src_path = os.path.join(src_root_dir, file.relative_path)
-      dst_path = os.path.join(dst_root_dir, file.relative_path)
-      dst_dir = os.path.dirname(dst_path)
-      if not os.path.exists(dst_dir):
-        os.makedirs(dst_dir)
-      utils.move(src_path, dst_path)
+      dst_path = utils.move_with_roots(
+          src_root_dir, dst_root_dir, file.relative_path
+      )
       moved_files.append(dataclasses.replace(file, relative_path=dst_path))
 
     updated_hash_to_metas[key] = moved_files
