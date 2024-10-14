@@ -20,7 +20,7 @@ _DEBUG = False
 
 
 def should_skip(filename: str):
-  for suffix in ('.jpeg', '.jpg', '.png', '.webp'):
+  for suffix in ('.jpeg', '.jpg', '.png'):  # TODO(laigd): '.webp' has issues.
     if filename.lower().endswith(suffix):
       return False
   if _DEBUG:
@@ -29,8 +29,10 @@ def should_skip(filename: str):
 
 
 def gen_html(
-    src_root_dir: str, dir_suffix: str, html_suffix: str,
-    meta_dict: dict[str, list[utils.ImageFileMeta]]
+    src_root_dir: str,
+    dir_suffix: str,
+    html_name: str,
+    meta_dict: dict[str, list[utils.ImageFileMeta]],
 ):
   html_dir = os.path.join(src_root_dir, f'score_html-{dir_suffix}')
   if not os.path.exists(html_dir):
@@ -38,11 +40,11 @@ def gen_html(
 
   html = utils.generate_html(
       grouped_images=meta_dict,
-      cell_width=400,
+      cell_width=200,
       check_first_image_path=False,
       num_images_in_group_to_show_thres=1,
   )
-  html_file_path = os.path.join(html_dir, f'image_score-{html_suffix}.html')
+  html_file_path = os.path.join(html_dir, f'{html_name}.html')
   with open(html_file_path, 'w') as f:
     f.write(html)
 
@@ -71,6 +73,11 @@ class _FileInfo:
 def write_htmls(
     all_infos: list[_FileInfo], imgs_per_row: int, predictor_name: str
 ):
+  if _DEBUG:
+    for info in all_infos:
+      print(f'\033[93m=> {info}\033[0m')
+  all_infos.sort()
+
   html_index = 0
   cur_row = None
   cur_meta_key = None
@@ -83,7 +90,7 @@ def write_htmls(
         gen_html(
             src_root_dir,
             dir_suffix=predictor_name,
-            html_suffix=f'{cur_meta_key}-{html_index}',
+            html_name=f'{cur_meta_key}-{html_index:03}',
             meta_dict=meta_dict,
         )
         meta_dict.clear()
@@ -102,7 +109,7 @@ def write_htmls(
     gen_html(
         src_root_dir,
         dir_suffix=predictor_name,
-        html_suffix=f'{cur_meta_key}-{html_index}',
+        html_name=f'{cur_meta_key}-{html_index:03}',
         meta_dict=meta_dict,
     )
 
@@ -123,7 +130,9 @@ class Predictor(Protocol):
     ...
 
 
-_CLASS_WEIGHT = dict(porn=1000, hentai=100, sexy=10, drawings=1, neutral=.1)
+_CLASS_WEIGHT_NSFW = dict(
+    porn=1000, hentai=100, sexy=10, drawings=1, neutral=.1
+)
 
 
 @utils.make_dataclass()
@@ -147,8 +156,37 @@ class NsfwPredictor(Predictor):
 
   def score_and_update(self, info: _FileInfo):
     k, max_value = max(info.metrics.items(), key=lambda item: item[1])
-    info.score = max_value * _CLASS_WEIGHT[k]
+    info.score = max_value * _CLASS_WEIGHT_NSFW[k]
     info.meta_key = f'score-{info.score}'
+
+
+_HAS_FACE = 4
+_CLASS_WEIGHT_NUDENET = (
+    # Tier 1
+    ('ANUS_EXPOSED', 1024, '99-porn'),
+    ('FEMALE_GENITALIA_EXPOSED', 1024, '99-porn'),
+    # Tier 2
+    ('BUTTOCKS_EXPOSED', 512, '89-butt'),
+    ('ANUS_COVERED', 256, '79-anus_covered'),
+    ('FEMALE_GENITALIA_COVERED', 128, '69-genitalia_covered'),
+    # Tier 3
+    ('BUTTOCKS_COVERED', 64, '59-butt_covered'),
+    ('MALE_GENITALIA_EXPOSED', 32, '49-genitalia_male'),
+    # Tier 4
+    ('FEMALE_BREAST_EXPOSED', 16, '39-breast'),
+    ('FEMALE_BREAST_COVERED', 8, '29-breast_covered'),
+    # Tier 5
+    ('FACE_FEMALE', _HAS_FACE, '19-face'),
+    # Tier 6
+    ('ARMPITS_EXPOSED', 1, '09-armpits'),
+    ('ARMPITS_COVERED', 1, '09-armpits_covered'),
+    ('BELLY_EXPOSED', 1, '09-belly'),
+    ('BELLY_COVERED', 1, '09-belly_covered'),
+    ('FEET_EXPOSED', 1, '09-feet'),
+    ('FEET_COVERED', 1, '09-feet_covered'),
+    ('FACE_MALE', 1, '09-face_male'),
+    ('MALE_BREAST_EXPOSED', 1, '09-breast_male'),
+)
 
 
 @utils.make_dataclass(frozen=True)
@@ -156,6 +194,7 @@ class NudePredictor(Predictor):
   src_root_dir: str = None
   dst_root_dir: str = None
   detector = NudeDetector()
+  _class_weight_map = {k: w for k, w, _ in _CLASS_WEIGHT_NUDENET}
 
   def __post_init__(self):
     assert bool(self.src_root_dir) == bool(
@@ -176,44 +215,24 @@ class NudePredictor(Predictor):
       image = cv2.imread(info.fullpath)
 
     score = 0
-    has_porn, has_breast, has_sexy, has_face = [False] * 4
+    classes = 0
     for metric in info.metrics:
       cls = metric['class']
       sc = metric['score']
       if image is not None:
         # If in debug mode, draw the bounding boxes.
         self._draw_box(image, metric['box'], f'{cls}: {sc}')
-
-      if cls in (
-          'FEMALE_GENITALIA_EXPOSED', 'ANUS_EXPOSED', 'BUTTOCKS_EXPOSED'
-      ):
-        score += (1 + sc) * 100
-        has_porn = True
-      elif cls in ('FEMALE_BREAST_EXPOSED',):
-        score += (1 + sc) * 10
-        has_breast = True
-      elif cls in (
-          'FEMALE_GENITALIA_COVERED', 'ANUS_COVERED', 'BUTTOCKS_COVERED'
-      ):
-        score += (1 + sc) * 5
-        has_sexy = True
-      elif cls in ('FACE_FEMALE',):
-        score += (1 + sc) * 1
-        has_face = True
-      else:
-        score += sc
-
+      weight = self._class_weight_map[cls]
+      score += (1 + sc) * weight
+      classes |= weight
     info.score = score
-    if has_porn:
-      info.meta_key = '4-porn'
-    elif has_breast:
-      info.meta_key = '3-breast'
-    elif has_sexy:
-      info.meta_key = '2-sexy'
-    elif has_face:
-      info.meta_key = '1-face'
-    else:
-      info.meta_key = '0-neutral'
+
+    meta_key = 'face-' if (classes & _HAS_FACE) else ''
+    for name, weight, key in _CLASS_WEIGHT_NUDENET:
+      if classes & weight:
+        meta_key += key
+        break
+    info.meta_key = meta_key or '00-neutral'
 
     # If in debug mode, dump the image with bounding boxes.
     if image is not None:
@@ -316,11 +335,6 @@ def run(
     predictor.score_and_update(info)
 
   print(f'\033[93m=> Generating htmls...\033[0m')
-  if _DEBUG:
-    for info in all_infos:
-      print(f'\033[93m=> {info}\033[0m')
-  all_infos.sort()
-
   write_htmls(all_infos, imgs_per_row, predictor.name)
 
 
@@ -330,8 +344,8 @@ if __name__ == '__main__':
       f'\033[93m=> Also need to fix nsfw_model code to support batching.\033[0m'
   )
 
-  src_root_dir = '/Users/laigd/Documents/images/eee/网页'
   src_root_dir = '/tmp/nsfw-test'
+  src_root_dir = '/Users/laigd/Documents/images/eee/网页'
 
   mode = 'nsfw'
   mode = 'nude'
@@ -344,10 +358,10 @@ if __name__ == '__main__':
     predictor = NsfwPredictor(key=key, img_dim=img_dim)
   elif mode == 'nude':
     predictor = NudePredictor(
-        src_root_dir=src_root_dir, dst_root_dir='/tmp/nsfw-moved'
+        # src_root_dir=src_root_dir, dst_root_dir='/tmp/nsfw-moved'
     )
 
   first_n = 999999999
-  first_n = 300
+  first_n = 100000
 
   run(predictor, src_root_dir=src_root_dir, first_n=first_n, imgs_per_row=7)

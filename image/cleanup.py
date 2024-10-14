@@ -90,8 +90,8 @@ def cleanup_images(
 # vadjx
 # python cleanup.py
 cleanup_images(
-    # src_root_dir='/Users/laigd/Documents/images/eee/网页',
-    src_root_dir='/Users/laigd/.Trash/1',
+    src_root_dir='/Users/laigd/Documents/images/eee/网页/74',
+    # src_root_dir='/Users/laigd/.Trash/1',
     dst_root_dir='/Users/laigd/.Trash/2',
     size_threshold=20 * 1024,
     delete_regex_patterns=(
