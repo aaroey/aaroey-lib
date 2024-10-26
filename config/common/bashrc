@@ -843,7 +843,7 @@ already_in_virtualenv() {
     echo ''
   fi
 }
-OLD_PYTHONPATH=''
+_OLD_PYTHONPATH=''
 virtualenv_activate() {
   if [[ $# -lt 2 ]]; then
     echo 'Usage: virtualenv_activate <python_version> <virtualenv_dir> [<pkgs>...]'
@@ -859,7 +859,7 @@ virtualenv_activate() {
   fi
 
   # Change the PYTHONPATH:
-  OLD_PYTHONPATH=$PYTHONPATH
+  _OLD_PYTHONPATH=$PYTHONPATH
   export PYTHONPATH=$(python$pyver -c "import sys; site_packages = next(p for p in sys.path if 'site-packages' in p); print(site_packages)")
 
   case "$(uname -s)" in
@@ -906,13 +906,9 @@ virtualenv_activate() {
   echo '--> PATH:' $PATH
   echo '--> LD_LIBRARY_PATH:' $LD_LIBRARY_PATH
 }
-virtualenv_deactivate() {
-  deactivate
-  export PYTHONPATH=$OLD_PYTHONPATH
-}
-vadtmpl() {
+vad() {
   if [[ $# -lt 2 ]]; then
-    >&2 echo -e "\e[91m=> Usage: vadtmpl python_version name [<packages>]... \e[0m"
+    >&2 echo -e "\e[91m=> Usage: vad python_version name [<packages>]... \e[0m"
     return
   fi
   set_x
@@ -924,60 +920,43 @@ vadtmpl() {
     vedir=/tmp/$RANDOM
   fi
   virtualenv_activate "$pyver" "$vedir" ipython numpy "$@"
-
-  local veworkspace=$dir/default_virtualenv_workspace
-  mkdir -p $veworkspace
-  pushd $veworkspace
   reset_x
 }
 dav() {
-  virtualenv_deactivate
-  popd
+  deactivate
+  export PYTHONPATH=$_OLD_PYTHONPATH
 }
-vadempty() { vadtmpl '' '' ; }
-vadlatest() { vadtmpl '' latest ; }
-vadjx()    { vadtmpl 3.12 jax 'jax[cpu]' optax; }
-vadtf()    { vadtmpl 3.9 tf tensorflow tensorflow-estimator tensorflow-hub pillow numpy opencv-python yapf black autopep8; }
+vadempty() { vad '' '' ; }
+vadlatest() { vad 3 latest ; }
+vadimg()   { vad 3 image pillow opencv-python yapf; }
+vadjx()    { vad 3.12 jax 'jax[cpu]' optax; }
+vadtf()    { vad 3.9 tf tensorflow tensorflow-estimator tensorflow-hub pillow opencv-python yapf; }
 
-export -f already_in_virtualenv virtualenv_activate virtualenv_deactivate virtualenv_pip_install vadtmpl dav
+export -f already_in_virtualenv virtualenv_activate virtualenv_pip_install vad dav
 
 #################################### python ####################################
-# TODO(laigd): virtualenv doesn't work without this, and will remove the
-# python->python3 alias, not sure why.
-python() { echo -e "\e[93mBe careful, using alias...\e[0m"; python3 "$@"; }
 _ipython_tmpl() {
+  if [[ "$VIRTUAL_ENV" == "" ]]; then
+    >&2 echo -e "\e[91m=> Be careful, not running inside a virtual env, import may fail! \e[0m"
+  fi
   $(which ipython) --TerminalInteractiveShell.editing_mode=vi "$@"
 }
-_ipython_virtualenv() {
-  if [[ "$VIRTUAL_ENV" == "" ]]; then
-    >&2 echo 'Error: must be run inside a virtual env!'
-    return
-  fi
-  _ipython_tmpl "$@"
-}
-ipythonvi() {
-  _ipython_virtualenv -i -c "
-import collections
-import datetime
-import functools
-import inspect
-import io
-import itertools
-import logging
+_SYS_IMPORTS='import collections, datetime, functools, inspect, io, itertools, logging, os, random, re, shutil, string, sys, tempfile, time, traceback, typing'
+python() {
+  >&2 echo -e "\e[93m=> Be careful, using alias...\e[0m"
+  if [[ "$#" -gt 0 ]]; then
+    _ipython_tmpl "$@"
+  else
+    local imports="
+$_SYS_IMPORTS
 import numpy as np
-import os
-import random
-import re
-import shutil
-import string
-import sys
-import tempfile
-import time
-import traceback
-" "$@"
+"
+    >&2 echo -e "\e[93m=> Importing ${imports} \e[0m"
+    _ipython_tmpl -i -c "$imports"
+  fi
 }
 pytf() {
-  local working_dir=${1:-$PWD}
+  local working_dir="$PWD"
   if [[ -f "$working_dir/tensorflow/python/BUILD" ]]; then
     >&2 echo 'Error: seems to be running inside a tensorflow repository, import may fail, are you sure to continue?[N/y]'
     read line
@@ -985,19 +964,21 @@ pytf() {
       return
     fi
   fi
-  pushd $working_dir
-  _ipython_virtualenv -i -c "
+  _ipython_tmpl -i -c "
+$_SYS_IMPORTS
 import lingvo.compat as tf
 from lingvo.core import py_utils
 " "$@"
-  popd
 }
 pyjx() {
-  _ipython_virtualenv -i -c "
+  local imports="
+$_SYS_IMPORTS
 import numpy as np
 import jax
 from jax import numpy as jnp
-" "$@"
+"
+  >&2 echo -e "\e[93m=> Importing ${imports} \e[0m"
+  _ipython_tmpl -i -c "$imports" "$@"
 }
 
 ##################################### misc #####################################
