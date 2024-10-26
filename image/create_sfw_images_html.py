@@ -142,6 +142,11 @@ class NsfwPredictor(Predictor):
   model: Any = dataclasses.field(init=False)
 
   def __post_init__(self):
+    print(f'\033[92m=> Need to run in vadtf env and in nsfw_model/ dir.\033[0m')
+    print(
+        f'\033[93m=> Also need to fix nsfw_model code to support batching.\033[0m'
+    )
+
     from nsfw_detector import predict
     self.model = predict.load_model(
         f'/Users/laigd/Workspace/nsfw_model/models/{self.key}'
@@ -339,11 +344,6 @@ def run(
 
 
 if __name__ == '__main__':
-  print(f'\033[92m=> Need to run in vadtf env and in nsfw_model/ dir.\033[0m')
-  print(
-      f'\033[93m=> Also need to fix nsfw_model code to support batching.\033[0m'
-  )
-
   src_root_dir = '/tmp/nsfw-test'
   src_root_dir = '/Users/laigd/Documents/images/eee/网页'
 
