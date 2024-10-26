@@ -142,8 +142,6 @@ export HISTFILESIZE=10000000
 export HISTSIZE=10000000
 export EDITOR='vim'  # use 'gvim -f' if you want to use GUI vim.
 
-NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
-
 sb() { exec bash; }
 vimbashrc() { vim ~/.bashrc $AAROEY_LIB_DIR/config/common/bashrc "$@"; }
 vimvimrc() { vim ~/.vimrc $AAROEY_LIB_DIR/config/common/vimrc "$@"; }
@@ -170,6 +168,8 @@ findfileslargerthan() {
   (while IFS= read -r i; do ls -alh -color "$i"; done) < $filename_output > $largest_fileinfo_output
   head -n $first_n $largest_fileinfo_output
 }
+
+NUM_MATCHES_TO_FIND=10000  # Stop after these many matches are found
 grep_file_name_or_content() {
   # Search a directory for a pattern in file names or file content.
   # We can add option -l to grep to show only filename instead of matched content
@@ -186,15 +186,15 @@ grep_file_name_or_content() {
   fi
 }
 grepfile() {
-  local pattern="$1"
-  shift
+  local pattern="$1"; shift
   grep -H -m $NUM_MATCHES_TO_FIND --color "$pattern" "$@"
 }
 fgptmpl() {
-  # Search a list of files or directories for a pattern in file content.
+  >&2 echo -e "\e[93m=> Search a list of files or directories for a pattern in file content. \e[0m"
+  >&2 echo -e "\e[93m=> Usage: fgptmpl <file_or_dir>... <file_content_pattern> \e[0m"
   case "$#" in
     0) ;&
-    1) echo 'Usage: fgptmpl <file_or_dir>... <file_content_pattern>';;
+    1) return;;
     *)
       until [[ $# -eq 1 ]]; do
         if test -d "$1"; then
@@ -210,21 +210,18 @@ fgptmpl() {
   esac
 }
 lgptmpl() {
-  # Search a directory for a pattern in file names.
+  >&2 echo -e "\e[93m=> Search a directory for a pattern in file names. \e[0m"
+  >&2 echo -e "\e[93m=> Usage: lgptmpl [<directory>=.] <file_name_pattern> \e[0m"
   case "$#" in
     1) grep_file_name_or_content '' . "$1";;
     2) grep_file_name_or_content '' "$1" "$2";;
-    *) echo 'Usage: lgptmpl [<directory>] <file_name_pattern>';;
+    *) return;;
   esac
 }
 lgpltemp() {
-  # Search a directory for a pattern in file names, and ls to show all their
-  # attributes.
-  # lgp + ls
-  if [[ "$#" -ne 1 ]]; then
-    echo 'Usage: lgp1 (or lgpl) <file_name_pattern>'
-    return
-  fi
+  >&2 echo -e "\e[93m=> Search a directory for a pattern in file names, and ls to show all their attributes, i.e. ==lgp+ls. \e[0m"
+  >&2 echo -e "\e[93m=> Usage: lgp1 (or lgpl) <file_name_pattern> \e[0m"
+  if [[ "$#" -ne 1 ]]; then return; fi
   lgptmpl "$@" | tr \\n \\0 | xargs -0 readlink -f | tr \\n \\0 | xargs -0 ls -alhF | grep "$@" --color
 }
 fgp()    { NUM_MATCHES_TO_FIND=10000; fgptmpl "$@"; }
@@ -233,16 +230,13 @@ lgp()    { NUM_MATCHES_TO_FIND=10000; lgptmpl "$@"; }
 lgpl()   { NUM_MATCHES_TO_FIND=10000; lgpltemp "$@"; }
 lgp1()   { NUM_MATCHES_TO_FIND=1;     lgpltemp "$@"; }
 lfgp()   {
-  # Search for a pattern in file content for files that are in ./ and match
-  # given file name pattern.
-  NUM_MATCHES_TO_FIND=10000
+  >&2 echo -e "\e[93m=> For files in ./ that match given file name pattern, find pattern usage in the file content. \e[0m"
+  >&2 echo -e "\e[93m=> Usage: lfgp <file_name_pattern in ./>[...] <file_content_pattern> \e[0m"
+  >&2 echo -e "\e[93m=> Note that to match special characters like "-" or "*" we need the antislash. \e[0m"
+  local num_matches_to_find=10000
   case "$#" in
     0) ;&
-    1)
-      echo 'Find pattern usage in files under ./ that match specific filename pattern.'
-      echo 'Usage: lfgp <file_name_pattern in ./>[...] <file_content_pattern>'
-      echo 'Note that to match special characters like "-" or "*" we need the antislash.'
-      return;;
+    1) return;;
   esac
   # TODO(laigd): this is very inefficient, should use -o:
   # https://stackoverflow.com/questions/1133698/using-find-to-locate-files-that-match-one-of-multiple-patterns
@@ -251,7 +245,7 @@ lfgp()   {
     out=$(echo "$out" | grep "$1")
     shift
   done
-  echo "$out" | tr \\n \\0 | xargs -0 grep -H -m $NUM_MATCHES_TO_FIND --color "$1"  # 2>/dev/null
+  echo "$out" | tr \\n \\0 | xargs -0 grep -H -m $num_matches_to_find --color "$1"  # 2>/dev/null
 }
 
 _PS_COLUMNS="F \+S \+UID \+PID \+PPID \+.\+ \+SZ \+.\+ \+RSS \+.\+ \+STIME \+TTY \+TIME \+CMD"
@@ -502,7 +496,7 @@ export -f sb clearscreen cls fgp fgp1 lgp lgp1 psgp psgpkill du0 ll datelocal da
 ##################################### git ######################################
 gd() { git diff "$@"; }
 gitdiff() {
-  >&2 echo -e "\e[93m=> Usage: gitdiff | gitdiff --no-index <any file1> <any file2> \e[0m"
+  >&2 echo -e "\e[93m=> Usage: gitdiff [--no-index] <any file1> <any file2> \e[0m"
   git diff --word-diff=color --word-diff-regex=. "$@"
 }
 gitdiffeditable() {
