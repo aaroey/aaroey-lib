@@ -14,7 +14,6 @@ import numpy as np
 from PIL import Image
 
 import utils
-from nudenet import NudeDetector
 
 _DEBUG = False
 
@@ -119,50 +118,15 @@ class Predictor(Protocol):
   @property
   @abc.abstractmethod
   def name(self) -> str:
-    ...
+    """Name of the predictor. Used for json and html file names."""
 
   @abc.abstractmethod
   def run(self, imgs: list[str]) -> dict[str, Any]:
-    ...
+    """Run prediction and return the prediction result to save to json."""
 
   @abc.abstractmethod
   def score_and_update(self, info: _FileInfo) -> None:
-    ...
-
-
-_CLASS_WEIGHT_NSFW = dict(
-    porn=1000, hentai=100, sexy=10, drawings=1, neutral=.1
-)
-
-
-@utils.make_dataclass()
-class NsfwPredictor(Predictor):
-  key: str
-  img_dim: int
-  model: Any = dataclasses.field(init=False)
-
-  def __post_init__(self):
-    print(f'\033[92m=> Need to run in vadtf env and in nsfw_model/ dir.\033[0m')
-    print(
-        f'\033[93m=> Also need to fix nsfw_model code to support batching.\033[0m'
-    )
-
-    from nsfw_detector import predict
-    self.model = predict.load_model(
-        f'/Users/laigd/Workspace/nsfw_model/models/{self.key}'
-    )
-
-  @property
-  def name(self) -> str:
-    return self.key
-
-  def run(self, imgs):
-    return predict.classify(self.model, imgs, self.img_dim)
-
-  def score_and_update(self, info: _FileInfo):
-    k, max_value = max(info.metrics.items(), key=lambda item: item[1])
-    info.score = max_value * _CLASS_WEIGHT_NSFW[k]
-    info.meta_key = f'score-{info.score}'
+    """Update info's metrics/score/meta_key, and maybe other information."""
 
 
 _HAS_FACE = 4
@@ -194,11 +158,21 @@ _CLASS_WEIGHT_NUDENET = (
 )
 
 
+def _create_nude_predictor():
+  print(f'\033[93m=> Remember to: pip install nudenet \033[0m')
+  from nudenet import NudeDetector
+  return NudeDetector()
+
+
 @utils.make_dataclass(frozen=True)
 class NudePredictor(Predictor):
+  # src_root_dir and dst_root_dir is used for debugging purposes. Need to be set
+  # together. When set, it'll copy the images from src_root_dir to dst_root_dir
+  # and add bounding boxes to the copies.
   src_root_dir: str = None
   dst_root_dir: str = None
-  detector = NudeDetector()
+
+  _detector: Any = dataclasses.field(default_factory=_create_nude_predictor)
   _class_weight_map = {k: w for k, w, _ in _CLASS_WEIGHT_NUDENET}
 
   def __post_init__(self):
@@ -211,7 +185,7 @@ class NudePredictor(Predictor):
     return 'nudenet'
 
   def run(self, imgs):
-    res = self.detector.detect_batch(imgs)
+    res = self._detector.detect_batch(imgs)
     return {k: v for k, v in zip(imgs, res)}
 
   def score_and_update(self, info: _FileInfo):
@@ -344,22 +318,11 @@ def run(
 
 
 if __name__ == '__main__':
-  src_root_dir = '/tmp/nsfw-test'
   src_root_dir = '/Users/laigd/Documents/images/eee/网页'
-
-  mode = 'nsfw'
-  mode = 'nude'
-
-  if mode == 'nsfw':
-    # yapf: disable
-    key = 'nsfw.299x299.h5'; img_dim = 299
-    key = 'nsfw_mobilenet2.224x224.h5'; img_dim = 224
-    # yapf: enable
-    predictor = NsfwPredictor(key=key, img_dim=img_dim)
-  elif mode == 'nude':
-    predictor = NudePredictor(
-        # src_root_dir=src_root_dir, dst_root_dir='/tmp/nsfw-moved'
-    )
+  src_root_dir = '/tmp/nsfw-test'
+  predictor = NudePredictor(
+      src_root_dir=src_root_dir, dst_root_dir='/tmp/nsfw-moved'
+  )
 
   first_n = 999999999
   first_n = 100000
